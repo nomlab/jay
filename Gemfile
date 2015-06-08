@@ -32,6 +32,30 @@ gem 'sdoc', '~> 0.4.0', group: :doc
 # Use Capistrano for deployment
 # gem 'capistrano-rails', group: :development
 
+
+## Markdown to HTML converter
+# gem 'github-markup'
+
+# pure-ruby markdown to HTML converter
+gem "kramdown"
+
+# html-pipeline filter
+gem 'html-pipeline'
+
+## for EmojiFilter
+gem 'gemoji'
+
+## for SanitizationFilter
+gem 'sanitize'
+
+## for AutolinkFilter
+gem 'rinku'
+
+## for SyntaxHighlightFilter
+gem 'github-linguist'
+gem 'pygments.rb'
+
+
 group :development, :test do
   # Call 'byebug' anywhere in the code to stop execution and get a debugger console
   gem 'byebug'

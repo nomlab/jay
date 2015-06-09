@@ -27,7 +27,7 @@
 
 <p>
   <strong>Content:</strong>
-  <%= @minute.content %>
+  <%= render partial: 'content', locals: {text: @minute.content} %>
 </p>
 
 <%= link_to 'Edit', edit_minute_path(@minute) %> |

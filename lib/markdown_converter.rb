@@ -87,6 +87,7 @@ class JayFlavoredMarkdownConverter
     whitelist = HTML::Pipeline::SanitizationFilter::WHITELIST.dup
     whitelist[:attributes][:all] << "data-linenum"
     {
+      input: "GFM",
       asset_root: 'https://assets-cdn.github.com/images/icons/',
       whitelist: whitelist
     }
@@ -96,7 +97,7 @@ class JayFlavoredMarkdownConverter
     HTML::Pipeline.new [
       JayFlavoredMarkdownFilter,
       HTML::Pipeline::AutolinkFilter,
-      HTML::Pipeline::SanitizationFilter,
+      # HTML::Pipeline::SanitizationFilter,
       HTML::Pipeline::ImageMaxWidthFilter,
       HTML::Pipeline::MentionFilter,
       HTML::Pipeline::EmojiFilter,

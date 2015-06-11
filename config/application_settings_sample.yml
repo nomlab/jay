@@ -1,0 +1,22 @@
+##
+## config/application_settings.yml
+##
+##
+default: &default
+  oauth:
+    github:
+      client_id: XXXXXXXXXXXXXXXXX
+      client_secret: XXXXXXXXXXXXXXXXXXX
+      ## allowed_team_id is a github team id adllowed to login.
+      ## It can be checked by:
+      ##   curl -u [your-github-account] https://api.github.com/orgs/:org/teams
+      allowed_team_id: xxxxx
+
+development:
+  <<: *default
+
+test:
+  <<: *default
+
+production:
+  <<: *default

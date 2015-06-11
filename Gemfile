@@ -55,6 +55,13 @@ gem 'rinku'
 gem 'github-linguist'
 gem 'pygments.rb'
 
+# OmniAuth + github
+gem 'omniauth'
+gem 'omniauth-github'
+gem "omniauth-github-team-member"
+
+# application settings
+gem "settingslogic"
 
 group :development, :test do
   # Call 'byebug' anywhere in the code to stop execution and get a debugger console

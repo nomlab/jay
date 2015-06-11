@@ -1,34 +1,4 @@
-<p id="notice"><%= notice %></p>
-
-<p>
-  <strong>Title:</strong>
-  <%= @minute.title %>
-</p>
-
-<p>
-  <strong>Dtstart:</strong>
-  <%= @minute.dtstart %>
-</p>
-
-<p>
-  <strong>Dtend:</strong>
-  <%= @minute.dtend %>
-</p>
-
-<p>
-  <strong>Location:</strong>
-  <%= @minute.location %>
-</p>
-
-<p>
-  <strong>Author:</strong>
-  <%= @minute.author_id %>
-</p>
-
-<p>
-  <strong>Content:</strong>
-  <%= render partial: 'content', locals: {text: @minute.content} %>
-</p>
+<%= render partial: 'content', locals: {text: @minute.content} %>
 
 <%= link_to 'Edit', edit_minute_path(@minute) %> |
 <%= link_to 'Back', minutes_path %>

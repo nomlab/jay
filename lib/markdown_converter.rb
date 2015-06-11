@@ -65,6 +65,65 @@ class JayFlavoredMarkdownFilter < HTML::Pipeline::TextFilter
 end
 
 #
+# Convert list item header ``+`` text to ``+ (A)``
+#
+class JayAddLabelToListItems < HTML::Pipeline::TextFilter
+  def call
+    @text = insert_label(@text.split("\n"), 1).join("\n")
+  end
+
+  private
+
+  def make_label_text(level, count)
+    labels = [
+      (  1 .. 100).to_a,
+      ("A" .. "Z").to_a,
+      ("a" .. "z").to_a,
+    ]
+    return labels[level - 1][count - 1].to_s
+  end
+
+  def insert_label_char(line, level, count)
+    if /^(\s*)([+-]) (.*)/ =~ line
+      char = make_label_text(level, count)
+      return $1 + $2 + " (#{char}) " + $3
+    else
+      return line
+    end
+  end
+
+  def indent_length(line)
+    if /^(\s*)/ =~ line
+      return $1.length
+    end
+    return 0
+  end
+
+  def insert_label(lines, level, count = 1)
+    return [] if lines.empty?
+
+    string = lines.shift
+    item = []
+
+    if /^(\s*)([+-]) (.*)/ =~ string
+      indent = $1.length
+      item << string
+
+      while lines[0] && (indent_length(lines[0]) > indent ||
+                         lines[0] =~ /^\r*$/)
+        item << lines.shift
+      end
+
+      return [insert_label_char(item[0], level, count)] +
+             insert_label(item[1..-1], level + 1) +
+             insert_label(lines, level, count + 1)
+    else
+      return [string] + insert_label(lines, level)
+    end
+  end
+end
+
+#
 # Jay Flavored Markdown to HTML converter
 #
 # Octdown is a good example for making original converter.
@@ -95,6 +154,7 @@ class JayFlavoredMarkdownConverter
 
   def pipeline
     HTML::Pipeline.new [
+      JayAddLabelToListItems,
       JayFlavoredMarkdownFilter,
       HTML::Pipeline::AutolinkFilter,
       # HTML::Pipeline::SanitizationFilter,

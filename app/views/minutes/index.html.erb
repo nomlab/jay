@@ -1,16 +1,12 @@
-<p id="notice"><%= notice %></p>
-
 <h1>Listing Minutes</h1>
 
-<table>
+<table class="table">
   <thead>
     <tr>
       <th>Title</th>
-      <th>Dtstart</th>
-      <th>Dtend</th>
+      <th>Date</th>
       <th>Location</th>
       <th>Author</th>
-      <th>Content</th>
       <th colspan="3"></th>
     </tr>
   </thead>
@@ -19,11 +15,9 @@
     <% @minutes.each do |minute| %>
       <tr>
         <td><%= minute.title %></td>
-        <td><%= minute.dtstart %></td>
-        <td><%= minute.dtend %></td>
+        <td><%= minute.dtstart.strftime("%Y-%m-%d") %></td>
         <td><%= minute.location %></td>
-        <td><%= minute.author_id %></td>
-        <td><%= minute.content %></td>
+        <td><%= minute.author && minute.author.name %></td>
         <td><%= link_to 'Show', minute %></td>
         <td><%= link_to 'Edit', edit_minute_path(minute) %></td>
         <td><%= link_to 'Destroy', minute, method: :delete, data: { confirm: 'Are you sure?' } %></td>

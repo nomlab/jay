@@ -4,6 +4,31 @@ body {
   font-family: verdana, arial, helvetica, sans-serif;
   font-size: 13px;
   line-height: 18px;
+  padding-top: 70px;
+  padding-bottom: 70px;
+}
+
+.navbar-nav li a {
+  line-height: 20px;
+}
+
+.navbar-header button {
+  margin: 10px 0px 0px 10px;
+}
+
+.navbar-header a  {
+  margin: 0px 0px 0px 0px;
+  padding: 0px;
+}
+
+.navbar-header a img {
+  margin: 10px 0px 0px 10px;
+  padding: 0px;
+}
+
+textarea {
+  width: 100%;
+  font-family: monospace !important;
 }
 
 p, ol, ul, td {

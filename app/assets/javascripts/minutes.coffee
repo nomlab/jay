@@ -39,6 +39,35 @@ getOriginalMinuteAsJSON_Stub = (fst, lst) ->
     repos: 'nomlab/camome' # FIXME
   }
 
+#
+# Remove Headings of list item ``+ (A) ``
+#
+removeHeader = (string) ->
+  string.replace(/^ *[*+-] */, '')
+#  string.replace(/^ *[*+-]( \(.\))? */, '')
+
+removeTrailer = (string) ->
+  string.replace(/(．)? *--(>|&gt;)\(.*\) */, '')
+
+getIndentLevel = (string) ->
+  indent = 9999
+  for line in string.split("\n")
+    match = /^ */.exec(line)
+    if match && match[0].length < indent
+      indent = match[0].length
+  return indent
+
+chopIndentLevel = (string, level) ->
+  return string if level == 0
+  space = new RegExp("^#{' '.repeat(level)}")
+  result = ''
+  for line in string.split("\n")
+    result += line.replace(space, '') + "\n"
+  return result
+
+chopIndent = (string) ->
+  chopIndentLevel(string, getIndentLevel(string))
+
 # Open new github issue draft
 #   repos: yoshinari-nomura/sandbox
 #   issue: {title: TEST, body: Blah, labels: bug, assignee: yoshinari-nomura}
@@ -52,8 +81,8 @@ ready = ->
       minute = getOriginalMinuteAsJSON(range.fst, range.lst)
       repos = minute.repos
       issue =
-        title: minute.title
-        body: minute.body
+        title: removeTrailer(removeHeader(minute.body.split("\n")[-1..][0]))
+        body: chopIndent(minute.body)
         labels: "" # FIXME
         assignee: minute.screen_name # FIXME
       newGithubIssue(repos, issue)

@@ -31,6 +31,21 @@ textarea {
   font-family: monospace !important;
 }
 
+li.bullet-list-item {
+  list-style: outside none;
+  margin-left: 0px;
+  text-indent: -2em;
+}
+
+.bullet-list-marker {
+  font-family: monospace !important;
+  font-weight: bold;
+  /* margin-right: 0.5em; */
+  float: left;
+  width: 2em;
+  font-size: 120%;
+}
+
 p, ol, ul, td {
   font-family: verdana, arial, helvetica, sans-serif;
   font-size: 13px;

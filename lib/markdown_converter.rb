@@ -123,6 +123,104 @@ class JayAddLabelToListItems < HTML::Pipeline::TextFilter
   end
 end
 
+class JayCustomItemBullet
+  def self.filter(*args)
+    Filter.call(*args)
+  end
+
+  class Filter < HTML::Pipeline::Filter
+    BulletPattern = /\(([a-zA-Z]|\d+)\)/.freeze
+
+    # Pattern used to identify all ``+ (1)`` style
+    # Useful when you need iterate over all items.
+    ItemPattern = /
+      ^
+      (?:\s*[-+*]|(?:\d+\.))? # optional list prefix
+      \s*                     # optional whitespace prefix
+      (                       # checkbox
+        #{BulletPattern}
+      )
+      (?=\s)                  # followed by whitespace
+    /x
+
+    ListItemSelector = ".//li[bullet_list_item(.)]".freeze
+
+    class XPathSelectorFunction
+      def self.bullet_list_item(nodes)
+        nodes if nodes.text =~ ItemPattern
+      end
+    end
+
+    # Selects first P tag of an LI, if present
+    ItemParaSelector = "./p[1]".freeze
+
+    # List of `BuletList::Item` objects that were recognized in the document.
+    # This is available in the result hash as `:bullet_list_items`.
+    #
+    # Returns an Array of BulletList::Item objects.
+    def bullet_list_items
+      result[:bullet_list_items] ||= []
+    end
+
+    # Public: Select all bullet lists from the `doc`.
+    #
+    # Returns an Array of Nokogiri::XML::Element objects for ordered and
+    # unordered lists.
+    def list_items
+      doc.xpath(ListItemSelector, XPathSelectorFunction)
+    end
+
+    # Filters the source for bullet list items.
+    #
+    # Each item is wrapped in HTML to identify, style, and layer
+    # useful behavior on top of.
+    #
+    # Modifications apply to the parsed document directly.
+    #
+    # Returns nothing.
+    def filter!
+      list_items.reverse.each do |li|
+        # add_css_class(li.parent, 'bullet-list')
+
+        outer, inner =
+          if p = li.xpath(ItemParaSelector)[0]
+            [p, p.inner_html]
+          else
+            [li, li.inner_html]
+          end
+        if match = (inner.chomp =~ ItemPattern && $1)
+          # item = Bullet::Item.new(match, inner)
+          # prepend because we're iterating in reverse
+          # bullet_list_items.unshift item
+
+          add_css_class(li, 'bullet-list-item')
+          outer.inner_html = render_bullet_list_item(inner)
+        end
+      end
+    end
+
+    def render_bullet_list_item(item)
+      Nokogiri::HTML.fragment \
+        item.sub(ItemPattern, '<span class="bullet-list-marker">\1</span>'), 'utf-8'
+    end
+
+    def call
+      filter!
+      doc
+    end
+
+    # Private: adds a CSS class name to a node, respecting existing class
+    # names.
+    def add_css_class(node, *new_class_names)
+      class_names = (node['class'] || '').split(' ')
+      return if new_class_names.all? { |klass| class_names.include?(klass) }
+      class_names.concat(new_class_names)
+      node['class'] = class_names.uniq.join(' ')
+    end
+  end
+end
+
+
 #
 # Jay Flavored Markdown to HTML converter
 #
@@ -156,6 +254,7 @@ class JayFlavoredMarkdownConverter
     HTML::Pipeline.new [
       JayAddLabelToListItems,
       JayFlavoredMarkdownFilter,
+      JayCustomItemBullet::Filter,
       HTML::Pipeline::AutolinkFilter,
       # HTML::Pipeline::SanitizationFilter,
       HTML::Pipeline::ImageMaxWidthFilter,

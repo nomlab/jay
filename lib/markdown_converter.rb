@@ -123,6 +123,66 @@ class JayAddLabelToListItems < HTML::Pipeline::TextFilter
   end
 end
 
+class JayAddCrossReference < HTML::Pipeline::TextFilter
+  def call
+    @ref_table = Hash.new
+    lines = @text.split("\n")
+    lines = find_label(lines, [])
+    @text = replace_label(lines)
+  end
+
+  private
+
+  def find_label(lines, stack)
+    return [] if lines.empty?
+    string = lines.shift
+    item = []
+
+    if /^(\s*)[*+-]\s*\((.*)\)(.*)/ =~ string
+      label_number = $2
+      item << string
+      indent = $1.length
+      while lines[0] && (indent_length(lines[0]) > indent ||
+                         lines[0] =~ /^\r*$/)
+        item << lines.shift
+      end
+      current_stack = stack + [label_number]
+      return [entry_label(item[0], current_stack)] +
+             find_label(item[1..-1], current_stack) +
+             find_label(lines, stack)
+    else
+      return [string] + find_label(lines, stack)
+    end
+  end
+
+  def replace_label(lines)
+    lines.map do |line|
+      if /(.*)\[\[(.+)\]\](.*)/ =~ line
+        ref = @ref_table[$2] ? "(#{@ref_table[$2].join("-")})" : "[[#{$2}]]"
+        $1 + "#{ref}" + $3
+      else
+        line
+      end
+    end.join("\n")
+  end
+
+  def indent_length(line)
+    if /^(\s*)/ =~ line
+      return $1.length
+    end
+    return 0
+  end
+
+  def entry_label(string, stack)
+    if /.*\<\<(.*)\>\>$/ =~ string
+      @ref_table[$1] = stack
+      string.sub(/\<\<.+\>\>/, '')
+    elsif
+      string
+    end
+  end
+end
+
 class JayCustomItemBullet
   def self.filter(*args)
     Filter.call(*args)
@@ -253,6 +313,7 @@ class JayFlavoredMarkdownConverter
   def pipeline
     HTML::Pipeline.new [
       JayAddLabelToListItems,
+      JayAddCrossReference,
       JayFlavoredMarkdownFilter,
       JayCustomItemBullet::Filter,
       HTML::Pipeline::AutolinkFilter,

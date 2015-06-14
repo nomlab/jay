@@ -167,57 +167,13 @@ end
 #
 class JayAddLabelToListItems < HTML::Pipeline::TextFilter
   def call
-    @text = insert_label(@text.split("\n"), 1).join("\n")
-  end
+    lines = @text.split("\n")
+    items = ListItemEnumerator.new(lines)
 
-  private
-
-  def make_label_text(level, count)
-    labels = [
-      (  1 .. 100).to_a,
-      ("A" .. "Z").to_a,
-      ("a" .. "z").to_a,
-    ]
-    return labels[level - 1][count - 1].to_s
-  end
-
-  def insert_label_char(line, level, count)
-    if /^(\s*)([+-]) (.*)/ =~ line
-      char = make_label_text(level, count)
-      return $1 + $2 + " (#{char}) " + $3
-    else
-      return line
-    end
-  end
-
-  def indent_length(line)
-    if /^(\s*)/ =~ line
-      return $1.length
-    end
-    return 0
-  end
-
-  def insert_label(lines, level, count = 1)
-    return [] if lines.empty?
-
-    string = lines.shift
-    item = []
-
-    if /^(\s*)([+-]) (.*)/ =~ string
-      indent = $1.length
-      item << string
-
-      while lines[0] && (indent_length(lines[0]) > indent ||
-                         lines[0] =~ /^\r*$/)
-        item << lines.shift
-      end
-
-      return [insert_label_char(item[0], level, count)] +
-             insert_label(item[1..-1], level + 1) +
-             insert_label(lines, level, count + 1)
-    else
-      return [string] + insert_label(lines, level)
-    end
+    # store <<name>> to hash
+    @text = items.filter do |header, count|
+      header.sub(/^(\s*)([+-])(\s+)/){|x| "#{$1}#{$2} (#{count.mark})#{$3}"}
+    end.join("\n")
   end
 end
 
@@ -238,61 +194,33 @@ end
 #
 class JayAddCrossReference < HTML::Pipeline::TextFilter
   def call
-    @ref_table = Hash.new
     lines = @text.split("\n")
-    lines = find_label(lines, [])
-    @text = replace_label(lines)
-  end
 
-  private
-
-  def find_label(lines, stack)
-    return [] if lines.empty?
-    string = lines.shift
-    item = []
-
-    if /^(\s*)[*+-]\s*\((.*)\)(.*)/ =~ string
-      label_number = $2
-      item << string
-      indent = $1.length
-      while lines[0] && (indent_length(lines[0]) > indent ||
-                         lines[0] =~ /^\r*$/)
-        item << lines.shift
+    # Scan "<<name>>" and make hash {"name" => "C"}
+    lines = ListItemEnumerator.new(lines).filter do |header, count|
+      header.gsub(/<<([^<>]+)>>/) do |_|
+        store_label($1, count.full_mark)
+        ""
       end
-      current_stack = stack + [label_number]
-      return [entry_label(item[0], current_stack)] +
-             find_label(item[1..-1], current_stack) +
-             find_label(lines, stack)
-    else
-      return [string] + find_label(lines, stack)
     end
-  end
 
-  def replace_label(lines)
-    lines.map do |line|
-      if /(.*)\[\[(.+)\]\](.*)/ =~ line
-        ref = @ref_table[$2] ? "(#{@ref_table[$2].join("-")})" : "[[#{$2}]]"
-        $1 + "#{ref}" + $3
-      else
-        line
+    # replace "[[name]]" to "(C)"
+    @text = lines.map do |line|
+      line.gsub(/\[\[([^\[\]]+)\]\]/) do |match|
+        "(#{lookup_label($1) || '???'})"
       end
     end.join("\n")
   end
 
-  def indent_length(line)
-    if /^(\s*)/ =~ line
-      return $1.length
-    end
-    return 0
+  private
+
+  def store_label(key, value)
+    @labels ||= {}
+    @labels[key] = value
   end
 
-  def entry_label(string, stack)
-    if /.*\<\<(.*)\>\>$/ =~ string
-      @ref_table[$1] = stack
-      string.sub(/\<\<.+\>\>/, '')
-    elsif
-      string
-    end
+  def lookup_label(key)
+    return @labels[key]
   end
 end
 

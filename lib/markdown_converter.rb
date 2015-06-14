@@ -24,6 +24,98 @@ if __FILE__ == $0
   require "pp"
 end
 
+################################################################
+## Helper classes to manipulate list items
+
+class LeveledCounter
+  def initialize(init = [0])
+    @counter = init
+  end
+
+  def next
+    new {|c| c[-1] += 1}
+  end
+
+  def next_level
+    new {|c| c << 0}
+  end
+
+  def reset
+    new {|c| c[-1] = 0}
+  end
+
+  def mark
+    num_to_mark(@counter.size, @counter.last)
+  end
+
+  def full_mark
+    @counter.map.with_index do |num, index|
+      num_to_mark(index + 1, num)
+    end.join("-")
+  end
+
+  private
+
+  def num_to_mark(depth, num)
+    mark = [1, "A", "a"][depth - 1]
+    code = mark.ord + num
+    mark.is_a?(String) ? code.chr : code
+  end
+
+  def new
+    dup = @counter.dup
+    yield dup
+    self.class.new(dup)
+  end
+end
+
+class ListItemEnumerator
+  LIST_ITEM_START_REGEXP = /^\s*[+-] /
+
+  def initialize(lines)
+    @lines = lines
+  end
+
+  def filter(&block)
+    scan(@lines.dup, LeveledCounter.new, &block)
+  end
+
+  private
+
+  def scan(lines, counter, &block)
+    return [] if lines.empty?
+
+    string = lines.shift
+    items = []
+
+    if LIST_ITEM_START_REGEXP =~ string
+      indent = indent_length(string)
+      items << string
+
+      while (string = lines.first) && inside_of_list?(string, indent)
+        items << lines.shift
+      end
+
+      return [yield(items.shift, counter)] +
+             scan(items, counter.next_level, &block) +
+             scan(lines, counter.next, &block)
+    else
+      return [string] + scan(lines, counter.reset, &block)
+    end
+  end
+
+  def indent_length(line)
+    /^(\s*)/ =~ line ? $1.length : 0
+  end
+
+  def inside_of_list?(string, current_indent)
+    return false if string.nil?
+    return true if indent_length(string) > current_indent
+    return true if string =~ /^\r*$/
+    return false
+  end
+end
+
 
 module Kramdown
   module Converter

@@ -116,6 +116,8 @@ class ListItemEnumerator
   end
 end
 
+################################################################
+## Kramdown to HTML converter with additions
 
 module Kramdown
   module Converter
@@ -155,6 +157,10 @@ class JayFlavoredMarkdownFilter < HTML::Pipeline::TextFilter
     Kramdown::Document.new(@text, context).to_line_numbered_html.strip.force_encoding("utf-8")
   end
 end
+
+
+################################################################
+## Markdown to Markdown filters
 
 #
 # Convert list item header ``+`` text to ``+ (A)``
@@ -215,6 +221,21 @@ class JayAddLabelToListItems < HTML::Pipeline::TextFilter
   end
 end
 
+#
+# Org-mode like label and ref converter
+#
+#   + (1)
+#     + (A) item title <<title>>
+#   ...
+#   item [[title]] is...
+#
+# is converted to:
+#
+#   + (1)
+#     + (A) item title
+#   ...
+#   item (1-A) is...
+#
 class JayAddCrossReference < HTML::Pipeline::TextFilter
   def call
     @ref_table = Hash.new
@@ -275,6 +296,28 @@ class JayAddCrossReference < HTML::Pipeline::TextFilter
   end
 end
 
+################################################################
+## HTML to HTML filters
+
+#
+# Add span tags and css classes to list headers.
+#
+# before:
+#   <ul>
+#     <li>(1) item header1</li>
+#     <li>(2) item header2</li>
+#   </ul>
+#
+# after:
+#   <ul>
+#     <li class="bullet-list-item">
+#       <span class="bullet-list-marker">(1)</span> item header1
+#     </li>
+#     <li class="bullet-list-item">
+#       <span class="bullet-list-marker">(2)</span> item header2
+#     </li>
+#   </ul>
+#
 class JayCustomItemBullet
   def self.filter(*args)
     Filter.call(*args)

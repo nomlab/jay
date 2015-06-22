@@ -26,46 +26,66 @@ end
 
 ################################################################
 ## Helper classes to manipulate list items
-
 class LeveledCounter
-  def initialize(init = [0])
-    @counter = init
+  def self.create(type)
+    case type
+    when :minute
+      MinuteLeveledCounter.new
+    when :section
+      SectionCounter.new
+    end
   end
 
   def next
-    new {|c| c[-1] += 1}
+    new {|c| c[level].succ!}
   end
 
   def next_level
-    new {|c| c << 0}
+    new {|c| c << @initial[level + 1]}
   end
-
+  
   def reset
-    new {|c| c[-1] = 0}
+    new {|c| c[level] = @initial[level]}
   end
 
   def mark
-    num_to_mark(@counter.size, @counter.last)
+    @counter[level]
   end
 
   def full_mark
-    @counter.map.with_index do |num, index|
-      num_to_mark(index + 1, num)
-    end.join("-")
+    @counter.join(@count_separator)
   end
 
   private
 
-  def num_to_mark(depth, num)
-    mark = [1, "A", "a"][depth - 1]
-    code = mark.ord + num
-    mark.is_a?(String) ? code.chr : code
+  def level
+    @counter.size - 1
   end
 
   def new
-    dup = @counter.dup
+    dup = @counter.map{|c| c && c.dup}
     yield dup
     self.class.new(dup)
+  end
+end
+
+class MinuteLeveledCounter < LeveledCounter
+  INIT_VALUES = ["1", "A", "a"]
+
+  def initialize(init = INIT_VALUES.take(1))
+    @initial = INIT_VALUES
+    @count_separator = '-'
+    @counter = init
+  end
+end
+
+class SectionCounter < LeveledCounter
+  INIT_VALUES = ["1", "1", "1"]
+  
+  def initialize(init = INIT_VALUES.take(1))
+    @initial = INIT_VALUES
+    @count_separator = '.'
+    @counter = init
   end
 end
 
@@ -76,8 +96,8 @@ class ListItemEnumerator
     @lines = lines
   end
 
-  def filter(&block)
-    scan(@lines.dup, LeveledCounter.new, &block)
+  def filter(type, &block)
+    scan(@lines.dup, LeveledCounter.create(type), &block)
   end
 
   private
@@ -171,7 +191,7 @@ class JayAddLabelToListItems < HTML::Pipeline::TextFilter
     items = ListItemEnumerator.new(lines)
 
     # store <<name>> to hash
-    @text = items.filter do |header, count|
+    @text = items.filter(:minute) do |header, count|
       header.sub(/^(\s*)([+-])(\s+)/){|x| "#{$1}#{$2} (#{count.mark})#{$3}"}
     end.join("\n")
   end
@@ -197,7 +217,7 @@ class JayAddCrossReference < HTML::Pipeline::TextFilter
     lines = @text.split("\n")
 
     # Scan "<<name>>" and make hash {"name" => "C"}
-    lines = ListItemEnumerator.new(lines).filter do |header, count|
+    lines = ListItemEnumerator.new(lines).filter(:minute) do |header, count|
       header.gsub(/<<([^<>]+)>>/) do |_|
         store_label($1, count.full_mark)
         ""

@@ -1,1 +1,13 @@
 <h1>jay - take a minute to GitHub</h1>
+
+<div class="container">
+<% if User.current %>
+  <h2>Your repositories:</h2>
+  <ul class="list-group">
+    <% User.current.repos.each do |repos| %>
+      <%#= repos.to_json %>
+      <li class="list-group-item"><%= link_to repos.full_name, repos.html_url %></li>
+    <% end %>
+  </ul>
+<% end %>
+</div>

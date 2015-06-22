@@ -8,7 +8,7 @@ Rails.application.config.middleware.use OmniAuth::Builder do
   provider :githubteammember,
     ApplicationSettings.oauth.github.client_id,
     ApplicationSettings.oauth.github.client_secret,
-    scope: 'read:org',
+    scope: 'read:org,user,repo',
     teams: {
       "active_member?" => ApplicationSettings.oauth.github.allowed_team_id
     },

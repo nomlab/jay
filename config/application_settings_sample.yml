@@ -3,6 +3,8 @@
 ##
 ##
 default: &default
+  github:
+    organization: XXXXXX
   oauth:
     github:
       client_id: XXXXXXXXXXXXXXXXX

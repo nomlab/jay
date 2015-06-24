@@ -36,16 +36,20 @@ class LeveledCounter
     end
   end
 
+  def initialize(init = init_values.take(1))
+    @counter = init
+  end
+
   def next
     new {|c| c[level].succ!}
   end
 
   def next_level
-    new {|c| c << @initial[level + 1]}
+    new {|c| c << init_values[level + 1]}
   end
-  
+
   def reset
-    new {|c| c[level] = @initial[level]}
+    new {|c| c[level] = init_values[level]}
   end
 
   def mark
@@ -53,10 +57,18 @@ class LeveledCounter
   end
 
   def full_mark
-    @counter.join(@count_separator)
+    @counter.join(count_separator)
   end
 
   private
+
+  def init_values
+    self.class::INIT_VALUES
+  end
+
+  def count_separator
+    self.class::COUNT_SEPARATOR
+  end
 
   def level
     @counter.size - 1
@@ -71,22 +83,12 @@ end
 
 class MinuteLeveledCounter < LeveledCounter
   INIT_VALUES = ["1", "A", "a"]
-
-  def initialize(init = INIT_VALUES.take(1))
-    @initial = INIT_VALUES
-    @count_separator = '-'
-    @counter = init
-  end
+  COUNT_SEPARATOR = '-'
 end
 
 class SectionCounter < LeveledCounter
   INIT_VALUES = ["1", "1", "1"]
-  
-  def initialize(init = INIT_VALUES.take(1))
-    @initial = INIT_VALUES
-    @count_separator = '.'
-    @counter = init
-  end
+  COUNT_SEPARATOR = '.'
 end
 
 class ListItemEnumerator

@@ -8,12 +8,15 @@ class ApplicationController < ActionController::Base
   private
   def login_state_setup
     if session[:user_id]
-      User.current = User.find(session[:user_id]) rescue nil
-      User.current_access_token = session[:access_token]
+      User.current = User.find_by_id(session[:user_id])
     else
       User.current = nil
-      User.current_access_token = nil
     end
+
+    if User.current
+      User.current.access_token = session[:access_token]
+    end
+
     return true
   end
 

@@ -9,14 +9,6 @@ class User < ActiveRecord::Base
     @current_user
   end
 
-  def self.current_access_token=(token)
-    @current_access_token = token
-  end
-
-  def self.current_access_token
-    @current_access_token
-  end
-
   def self.create_with_omniauth(auth)
     create! do |user|
       user.provider = auth["provider"]
@@ -24,6 +16,8 @@ class User < ActiveRecord::Base
       user.name     = auth["info"]["name"]
     end
   end
+
+  attr_accessor :access_token
 
   # Re-create valid access token usable by OAuth2
   #
@@ -37,7 +31,7 @@ class User < ActiveRecord::Base
                                      ApplicationSettings.oauth.github.client_secret,
                                      :site => "https://api.github.com/")
 
-    @token ||= ::OAuth2::AccessToken.new(@client, User.current_access_token)
+    @token ||= ::OAuth2::AccessToken.new(@client, User.current.access_token)
   end
 
   # method: :get, :post, ...
@@ -58,7 +52,7 @@ class User < ActiveRecord::Base
   # Get repository information using octokit
   # https://gist.github.com/mattboldt/7865054
   def repos
-    github = ::Octokit::Client.new(:access_token => User.current_access_token)
+    github = ::Octokit::Client.new(:access_token => User.current.access_token)
     array = github.organization_repositories(ApplicationSettings.github.organization)
   end
 

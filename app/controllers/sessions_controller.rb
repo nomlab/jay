@@ -22,6 +22,15 @@ class SessionsController < ApplicationController
 
     session[:user_id] = user.id
     session[:access_token] = auth["credentials"]["token"]
+
+    info = auth["info"]
+
+    user.update(
+      name:        info["name"],
+      screen_name: info["nickname"],
+      avatar_url:  info["image"],
+    )
+
     redirect_to '/', :notice => "User #{user.name} signed in."
   end
 end

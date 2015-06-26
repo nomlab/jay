@@ -16,11 +16,18 @@ class User < ActiveRecord::Base
     @current_user
   end
 
+  # Omniauth-github has these info:
+  #   https://github.com/intridea/omniauth-github/blob/master/lib/omniauth/strategies/github.rb
+  #
   def self.create_with_omniauth(auth)
     create! do |user|
       user.provider = auth["provider"]
       user.uid      = auth["uid"]
-      user.name     = auth["info"]["name"]
+
+      info = auth["info"]
+      user.name        = info["name"]
+      user.screen_name = info["nickname"]
+      user.avatar_url  = info["image"]
     end
   end
 

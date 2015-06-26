@@ -7,6 +7,8 @@ class SessionsController < ApplicationController
     redirect_to root_path, :notice => "User logout."
   end
 
+  # Omniauth callback should be routed to this method in routes.rb:
+  #   match "/auth/:provider/callback" => "sessions#create"
   def create
     auth = request.env["omniauth.auth"]
 

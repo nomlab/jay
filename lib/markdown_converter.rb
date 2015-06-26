@@ -216,6 +216,7 @@ end
 #
 class JayAddCrossReference < HTML::Pipeline::TextFilter
   def call
+    @labels = {}
     lines = @text.split("\n")
 
     # Scan "<<name>>" and make hash {"name" => "C"}
@@ -237,7 +238,6 @@ class JayAddCrossReference < HTML::Pipeline::TextFilter
   private
 
   def store_label(key, value)
-    @labels ||= {}
     @labels[key] = value
   end
 

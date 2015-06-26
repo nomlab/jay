@@ -1,6 +1,13 @@
 class User < ActiveRecord::Base
   has_many :minutes, :foreign_key => :author_id
 
+  validates_presence_of :provider, :uid, :screen_name
+
+  validates_uniqueness_of :screen_name
+  validates_uniqueness_of :uid, :scope => :provider
+
+  validates_format_of :screen_name, :with => /\A[a-zA-Z\d]+(-[a-zA-Z\d]+)*\z/
+
   def self.current=(user)
     @current_user = user
   end

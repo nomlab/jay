@@ -43,6 +43,20 @@ removeHeader = (string) ->
   string.replace(/^ *[*+-] */, '')
 #  string.replace(/^ *[*+-]( \(.\))? */, '')
 
+# Return a regexp to match a string in the array STRINGS
+# JavaScript verion of Emacs regexp-opt
+# https://gist.github.com/kawanet/5540864
+#
+array_to_regexp = (strings, regexp_option) ->
+  re = strings
+    .sort (a, b) ->
+      b.length - a.length
+    .map (str) ->
+      str.replace /\W/g, (match) ->
+        "\\" + match
+    .join("|")
+  return new RegExp(re, regexp_option)
+
 #
 # Remove trailing ``-->(...)''
 #
@@ -75,11 +89,51 @@ newGithubIssue = (repos, issue) ->
   github = 'https://github.com'
   window.open("#{github}/#{repos}/issues/new?#{$.param(issue)}")
 
+# Get User's Github *public* repositories in ORGANIZATION
+# https://developer.github.com/v3/repos/#list-organization-repositories
+#
+getGithubPublicRepositories = (organization, full) ->
+  res = $.ajax
+    url: "https://api.github.com/orgs/#{organization}/repos"
+    async: false
+    dataType: 'json'
+  repos = []
+  for r in res.responseJSON
+    repos.push (if full then r.full_name else r.name)
+  # alert "REPOS:" + repos.join("\n")
+  return repos
+
+# Get User's Github *public* repositories in ORGANIZATION
+# https://developer.github.com/v3/repos/#list-organization-repositories
+# JSONP should be async
+getGithubPublicRepositoriesJSONP = (organization, full, callback) ->
+  res = $.ajax
+    url: "https://api.github.com/orgs/#{organization}/repos"
+    dataType: 'jsonp'
+    success: (res) ->
+      repos = []
+      for r in res.data
+        repos.push (if full then r.full_name else r.name)
+      callback(repos)
+
+# Guess suitable repository candidates by
+# scanning the content of MINUTE.
+#
+# Candidates are scanned from user's profile
+# via GitHub API
+#
+getGithubTargetRepository = (minute) ->
+  repos_list = getGithubPublicRepositories(minute.organization)
+  regexp = array_to_regexp(repos_list, "g")
+  repos = minute.content.match(regexp)
+  # alert (if repos then repos.join("\n") else "NO match")
+  repos
+
 ready = ->
   $('.action-item').click (event) ->
     if range = getSelectionLineRange()
       minute = getOriginalMinuteAsJSON(range.fst, range.lst)
-      repos = minute.repos
+      repos = "#{minute.organization}/" + getGithubTargetRepository(minute)[0]
       issue =
         title: removeTrailer(removeHeader(minute.body.split("\n")[-1..][0]))
         body: chopIndent(minute.body)

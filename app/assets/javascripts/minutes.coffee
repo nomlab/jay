@@ -43,6 +43,9 @@ removeHeader = (string) ->
   string.replace(/^ *[*+-] */, '')
 #  string.replace(/^ *[*+-]( \(.\))? */, '')
 
+#
+# Remove trailing ``-->(...)''
+#
 removeTrailer = (string) ->
   string.replace(/(．)? *--(>|&gt;)\(.*\) */, '')
 

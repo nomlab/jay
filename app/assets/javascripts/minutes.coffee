@@ -24,10 +24,8 @@ getOriginalMinuteAsJSON = (fst, lst) ->
     url: window.location.pathname + ".json"
     async: false
     dataType: 'json'
-
   json = res.responseJSON
   json.body  = json.content.split("\n")[fst-1 .. lst-1].join("\n")
-  json.repos = 'nomlab/camome' # xxx
   return json
 
 # Stub getOriginalMinuteAsJSON for test
@@ -36,7 +34,6 @@ getOriginalMinuteAsJSON_Stub = (fst, lst) ->
     title: "Minute 2015-06-10"
     body: "# Blah\n+ fst: #{fst}\n+ lst: #{lst}\n"
     labels: "bug"
-    repos: 'nomlab/camome' # FIXME
   }
 
 #

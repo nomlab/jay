@@ -29,8 +29,8 @@ end
 class LeveledCounter
   def self.create(type)
     case type
-    when :minute
-      MinuteLeveledCounter.new
+    when :item
+      ListItemLeveledCounter.new
     when :section
       SectionCounter.new
     end
@@ -60,6 +60,10 @@ class LeveledCounter
     @counter.join(count_separator)
   end
 
+  def type
+    self.class::COUNTER_TYPE
+  end
+
   private
 
   def init_values
@@ -81,60 +85,130 @@ class LeveledCounter
   end
 end
 
-class MinuteLeveledCounter < LeveledCounter
+class ListItemLeveledCounter < LeveledCounter
   INIT_VALUES = ["1", "A", "a"]
   COUNT_SEPARATOR = '-'
+  COUNTER_TYPE = :item
+
+  def label
+    "(#{mark})"
+  end
 end
 
 class SectionCounter < LeveledCounter
   INIT_VALUES = ["1", "1", "1"]
   COUNT_SEPARATOR = '.'
+  COUNTER_TYPE = :section
+
+  def label
+    full_mark
+  end
 end
 
-class ListItemEnumerator
-  LIST_ITEM_START_REGEXP = /^\s*[+-] /
-
-  def initialize(lines)
-    @lines = lines
+class MarkdownFeature
+  def self.create(type)
+    case type
+    when :item
+      ListItemFeature.new
+    when :section
+      SectionFeature.new
+    end
   end
 
-  def filter(type, &block)
-    scan(@lines.dup, LeveledCounter.create(type), &block)
+  def match_start_regexp?(string)
+    start_regexp =~ string
+  end
+
+  def indent_length(line)
+    indent =~ line ? $1.length : 0
+  end
+
+  def type
+    self.class::FEATURE_TYPE
   end
 
   private
 
-  def scan(lines, counter, &block)
-    return [] if lines.empty?
-
-    string = lines.shift
-    items = []
-
-    if LIST_ITEM_START_REGEXP =~ string
-      indent = indent_length(string)
-      items << string
-
-      while (string = lines.first) && inside_of_list?(string, indent)
-        items << lines.shift
-      end
-
-      return [yield(items.shift, counter)] +
-             scan(items, counter.next_level, &block) +
-             scan(lines, counter.next, &block)
-    else
-      return [string] + scan(lines, counter.reset, &block)
-    end
+  def start_regexp
+    self.class::START_REGEXP
   end
 
-  def indent_length(line)
-    /^(\s*)/ =~ line ? $1.length : 0
+  def indent
+    self.class::INDENT
   end
+end
+
+class ListItemFeature < MarkdownFeature
+  START_REGEXP = /^\s*[+-] /
+  INDENT = /^(\s*)/
+  FEATURE_TYPE = :item
 
   def inside_of_list?(string, current_indent)
     return false if string.nil?
     return true if indent_length(string) > current_indent
     return true if string =~ /^\r*$/
     return false
+  end
+end
+
+class SectionFeature < MarkdownFeature
+  START_REGEXP = /^##+ /
+  INDENT = /^#(#+)/
+  FEATURE_TYPE = :section
+
+  def inside_of_list?(string, current_indent)
+    return false if string.nil?
+    return true if indent_length(string) > current_indent
+    return true unless match_start_regexp?(string)
+    return false
+  end
+end
+
+class MarkdownEnumerator
+  def initialize(lines)
+    @lines = lines
+    @features = [MarkdownFeature.create(:item), MarkdownFeature.create(:section)]
+    @counters = [LeveledCounter.create(:item), LeveledCounter.create(:section)]
+  end
+
+  def filter(&block)
+    scan(@lines.dup, @counters, @features, &block)
+  end
+
+  private
+
+  def scan(lines, counters, features, &block)
+    return [] if lines.empty?
+
+    string = lines.shift
+    children = []
+
+    if (feature = features.find {|item| item.match_start_regexp?(string)})
+      ct_index = counters.find_index {|item| item.type ==  feature.type}
+
+      indent = feature.indent_length(string)
+      children << string
+
+      while (string = lines.first) && feature.inside_of_list?(string, indent)
+        children << lines.shift
+      end
+
+      return [yield(children.shift, counters[ct_index])] +
+             scan(children, next_counters(counters, ct_index, &:next_level), features, &block) +
+             scan(lines, next_counters(counters, ct_index, &:next), features, &block)
+    else
+      return [string] + scan(lines, counters.map(&:reset), features, &block)
+    end
+  end
+
+  def next_counters(counters, index, &method)
+    counters.map.with_index do |counter, i|
+      if index == i
+        yield counter
+      else
+        counter.dup
+      end
+    end
   end
 end
 
@@ -190,11 +264,11 @@ end
 class JayAddLabelToListItems < HTML::Pipeline::TextFilter
   def call
     lines = @text.split("\n")
-    items = ListItemEnumerator.new(lines)
+    items = MarkdownEnumerator.new(lines)
 
     # store <<name>> to hash
-    @text = items.filter(:minute) do |header, count|
-      header.sub(/^(\s*)([+-])(\s+)/){|x| "#{$1}#{$2} (#{count.mark})#{$3}"}
+    @text = items.filter do |header, count|
+      header.sub(/^(\s*[+-]|##+)(\s+)/){|x| "#{$1} #{count.label}#{$2}"}
     end.join("\n")
   end
 end
@@ -220,7 +294,7 @@ class JayAddCrossReference < HTML::Pipeline::TextFilter
     lines = @text.split("\n")
 
     # Scan "<<name>>" and make hash {"name" => "C"}
-    lines = ListItemEnumerator.new(lines).filter(:minute) do |header, count|
+    lines = MarkdownEnumerator.new(lines).filter do |header, count|
       header.gsub(/<<([^<>]+)>>/) do |_|
         store_label($1, count.full_mark)
         ""

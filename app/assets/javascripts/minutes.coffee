@@ -129,7 +129,29 @@ getGithubTargetRepository = (minute) ->
   # alert (if repos then repos.join("\n") else "NO match")
   repos
 
+setupAutoCompleteEmoji = (element) ->
+  img_url = "https://raw.githubusercontent.com/Ranks/emojify.js/master/src/images/emoji"
+  $(element).textcomplete [
+      match: /\B:([\-+\w]*)$/
+
+      search: (term, callback) ->
+        callback $.map window.emoji_list, (emoji) ->
+          return emoji if emoji.indexOf(term) >= 0
+          return null
+
+      template: (value) ->
+        "<img src=\"#{img_url}/#{value}.png\" width=\"16\"></img> #{value}"
+
+      replace:  (value) ->
+        ":#{value}:"
+
+      index: 1
+    ],
+    onKeydown: (e, commands) ->
+      return commands.KEY_ENTER if e.ctrlKey && e.keyCode == 74 # CTRL-J
+
 ready = ->
+  setupAutoCompleteEmoji('#minute_content')
   $('.action-item').click (event) ->
     if range = getSelectionLineRange()
       minute = getOriginalMinuteAsJSON(range.fst, range.lst)

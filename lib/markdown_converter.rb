@@ -123,11 +123,19 @@ class MarkdownFeature
     indent =~ line ? $1.length : 0
   end
 
-  def type
-    self.class::FEATURE_TYPE
+  def create_counter
+    LeveledCounter.create(type)
+  end
+
+  def select_counter(counters)
+    counters.find {|item| item.type == type}
   end
 
   private
+
+  def type
+    self.class::FEATURE_TYPE
+  end
 
   def start_regexp
     self.class::START_REGEXP
@@ -168,24 +176,23 @@ class MarkdownEnumerator
   def initialize(lines)
     @lines = lines
     @features = [MarkdownFeature.create(:item), MarkdownFeature.create(:section)]
-    @counters = [LeveledCounter.create(:item), LeveledCounter.create(:section)]
   end
 
   def filter(&block)
-    scan(@lines.dup, @counters, @features, &block)
+    scan(@lines.dup, @features.map(&:create_counter), &block)
   end
 
   private
 
-  def scan(lines, counters, features, &block)
+  def scan(lines, counters, &block)
     return [] if lines.empty?
 
     string = lines.shift
     children = []
 
-    if (feature = features.find {|item| item.match_start_regexp?(string)})
-      ct_index = counters.find_index {|item| item.type ==  feature.type}
-
+    if (feature = @features.find {|item| item.match_start_regexp?(string)})
+      counter = feature.select_counter(counters)
+      
       indent = feature.indent_length(string)
       children << string
 
@@ -193,22 +200,24 @@ class MarkdownEnumerator
         children << lines.shift
       end
 
-      return [yield(children.shift, counters[ct_index])] +
-             scan(children, next_counters(counters, ct_index, &:next_level), features, &block) +
-             scan(lines, next_counters(counters, ct_index, &:next), features, &block)
+      return [yield(children.shift, counter)] +
+             scan(children, next_level_counters(counters, counter), &block) +
+             scan(lines, next_counters(counters, counter), &block)
     else
-      return [string] + scan(lines, counters.map(&:reset), features, &block)
+      return [string] + scan(lines, reset_counters(counters, counter), &block)
     end
   end
 
-  def next_counters(counters, index, &method)
-    counters.map.with_index do |counter, i|
-      if index == i
-        yield counter
-      else
-        counter.dup
-      end
-    end
+  def next_counters(counters, counter)
+    counters.map {|item| item == counter ? item.next : item}
+  end
+
+  def next_level_counters(counters, counter)
+    counters.map {|item| item == counter ? item.next_level : item}
+  end
+
+  def reset_counters(counters, counter)
+    counters.map {|item| item == counter ? item.reset : item}
   end
 end
 

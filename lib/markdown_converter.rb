@@ -192,7 +192,7 @@ class MarkdownEnumerator
 
     if (feature = @features.find {|item| item.match_start_regexp?(string)})
       counter = feature.select_counter(counters)
-      
+
       indent = feature.indent_length(string)
       children << string
 

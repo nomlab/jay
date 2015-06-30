@@ -371,6 +371,87 @@ class JayRemoveMarkupElements < HTML::Pipeline::TextFilter
   end
 end
 
+#
+# Fill columns with MAX_COLUMN characters in one line
+#
+#   (1) One sheep, two sheep, three sheep, four sheep, five sheep.
+#     (A) Six sheep, seven sheep, eight sheep, nine sheep, ten sheep.
+#
+# is converted to:
+#
+#   (1) One sheep, two sheep, three sheep, four
+#       sheep, five sheep.
+#     (A) Six sheep, seven sheep, eight sheep,
+#         nine sheep, ten sheep.
+#
+class JayFillColumns < HTML::Pipeline::TextFilter
+  MAX_COLUMN = 70
+
+  def call
+    lines = @text.split("\n")
+    @text = lines.map do |line|
+      pos = paragraph_position(line)
+      fill_column(line, MAX_COLUMN, pos, ' ')
+    end.join("\n")
+  end
+
+  private
+
+  def character_not_to_allow_newline_in_word?(c)
+    newline = "\n\r"
+    symbol = "-,.，．"
+    small_kana = "ぁぃぅぇぉゃゅょゎァィゥェォャュョヮ"
+    return !!(c =~ /[a-zA-Z#{newline}#{symbol}#{small_kana}]/)
+  end
+
+  # Get position of beginning of line after second line
+  def paragraph_position(str)
+    # Example1: " No.100-01 :: Minutes of GN meeting"
+    #                         ^
+    # Example2: " (A) This is ...."
+    #                ^
+    if /(\s*[^\s]+(\s+::)?\s)/ =~ str
+      return str_mb_width($1)
+    else
+      return 0
+    end
+  end
+
+  # Get width of a character considering multibyte character
+  def char_mb_width(c)
+    return 0 if c == "\r" || c == "\n" || c.empty?
+    return c.ascii_only? ? 1 : 2
+  end
+
+  # Get width of string considering multibyte character
+  def str_mb_width(str)
+    return str.each_char.map{|c| char_mb_width(c)}.inject(:+)
+  end
+
+  # str       : String, not including newline
+  # max_width : Max width in one line
+  # positon   : Position of beginning of line after second line
+  # padding   : Character used padding
+  def fill_column(str, max_width, position, padding)
+    return str if max_width >= str_mb_width(str)
+
+    i = 0; width = 0
+    begin
+      width += char_mb_width(str[i])
+    end while width <= max_width && i += 1
+
+    i += 1 while character_not_to_allow_newline_in_word?(str[i])
+
+    if str.length > i + 1
+      x = str[0..(i-1)] + "\n"
+      xs = "#{padding * position}" + str[i..(str.length-1)]
+      return x + fill_column(xs, max_width, position, padding)
+    else
+      return str
+    end
+  end
+end
+
 ################################################################
 ## HTML to HTML filters
 
@@ -567,6 +648,7 @@ class JayFlavoredMarkdownToPlainTextConverter
       JayAddLabelToListItems,
       JayAddCrossReference,
       JayRemoveMarkupElements,
+      JayFillColumns,
     ], context.merge(@options)
   end
 end

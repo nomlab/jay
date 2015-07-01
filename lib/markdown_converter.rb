@@ -329,6 +329,48 @@ class JayAddCrossReference < HTML::Pipeline::TextFilter
   end
 end
 
+#
+# Remove markup elements(*, +, -, #, [])
+#
+class JayRemoveMarkupElements < HTML::Pipeline::TextFilter
+  def call
+    @text = @text.split("\n").map do |line|
+      line = remove_emphasis(line)
+      line = remove_header(line)
+      line = remove_link(line)
+      line = remove_list(line)
+      line = remove_strikethrough(line)
+    end.join("\n")
+  end
+
+  private
+
+  # Remove " _hoge_ ", " *fuga* "
+  def remove_emphasis(line)
+    return line.gsub(/\s([\_\*])([^\1]+?)\1\s/, '\2')
+  end
+
+  # Remove "#"
+  def remove_header(line)
+    return line.gsub(/\A#+\s+(.*)/, '\1')
+  end
+
+  # Remove "[title](link)"
+  def remove_link(line)
+    return line.gsub(/(\[.*\])\(.*?\)/, '\1')
+  end
+
+  # Remove "*", "+", "-"
+  def remove_list(line)
+    return line.gsub(/[\*\+\-]\s+/, '')
+  end
+
+  # Remove " ~hoge~ "
+  def remove_strikethrough(line)
+    return line.gsub(/\s~([^~]+?)~\s/, '\1')
+  end
+end
+
 ################################################################
 ## HTML to HTML filters
 
@@ -490,6 +532,41 @@ class JayFlavoredMarkdownConverter
       HTML::Pipeline::MentionFilter,
       HTML::Pipeline::EmojiFilter,
       HTML::Pipeline::SyntaxHighlightFilter,
+    ], context.merge(@options)
+  end
+end
+
+#
+# Jay Flavored Markdown to Plain Text converter
+#
+class JayFlavoredMarkdownToPlainTextConverter
+
+  def initialize(text, options = {})
+    @text = text
+    @options = options
+  end
+
+  def content
+    pipeline.call(@text)[:output].to_s
+  end
+
+  private
+
+  def context
+    whitelist = HTML::Pipeline::SanitizationFilter::WHITELIST.dup
+    whitelist[:attributes][:all] << "data-linenum"
+    {
+      input: "GFM",
+      asset_root: 'https://assets-cdn.github.com/images/icons/',
+      whitelist: whitelist
+    }
+  end
+
+  def pipeline
+    HTML::Pipeline.new [
+      JayAddLabelToListItems,
+      JayAddCrossReference,
+      JayRemoveMarkupElements,
     ], context.merge(@options)
   end
 end

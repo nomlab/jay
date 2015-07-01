@@ -14,7 +14,7 @@ class MinutesController < ApplicationController
 
   # GET /minutes/new
   def new
-    @minute = Minute.new
+    @minute = Minute.new(:author_id => User.current.id)
   end
 
   # GET /minutes/1/edit

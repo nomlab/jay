@@ -61,6 +61,15 @@ class UsersController < ApplicationController
     end
   end
 
+  # GET
+  def repositories
+    @repos = User.current.repos
+    respond_to do |format|
+      format.html
+      format.json {render json: @repos}
+    end
+  end
+
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_user

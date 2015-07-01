@@ -51,6 +51,10 @@ class MinutesController < ApplicationController
     end
   end
 
+  def preview
+    send_data ::JayFlavoredMarkdownConverter.new(params[:text]).content, :type => 'text/html', :disposition => 'inline'
+  end
+
   # DELETE /minutes/1
   # DELETE /minutes/1.json
   def destroy

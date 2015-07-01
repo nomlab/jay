@@ -58,6 +58,13 @@ li.bullet-list-item {
   color: #191970;
 }
 
+.markdown-body {
+  /* border: 1px solid #000000; */
+  background-color: #fafafa;
+  margin: 10px;
+  padding: 30px;
+}
+
 .markdown-body > ul {
   margin-left: 1em;
 }

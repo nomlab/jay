@@ -11,30 +11,53 @@
     </div>
   <% end %>
 
-  <div class="field">
+  <div class="field form-group">
     <%= f.label :title %><br>
-    <%= f.text_field :title %>
+    <%= f.text_field :title, class: 'form-control' %>
   </div>
-  <div class="field">
+  <div class="field form-group">
     <%= f.label :dtstart %><br>
-    <%= f.datetime_select :dtstart %>
+    <%= f.datetime_local_field :dtstart, class: 'form-control'  %>
   </div>
-  <div class="field">
+  <div class="field form-group">
     <%= f.label :dtend %><br>
-    <%= f.datetime_select :dtend %>
+    <%= f.datetime_local_field :dtend, class: 'form-control'  %>
   </div>
-  <div class="field">
+  <div class="field form-group">
     <%= f.label :location %><br>
-    <%= f.text_field :location %>
+    <%= f.text_field :location, class: 'form-control'  %>
   </div>
-  <div class="field">
+  <div class="field form-group">
     <%= f.label :author_name %><br>
-    <%= f.text_field :author_id %>
+    <%= f.text_field :author_id, class: 'form-control'  %>
   </div>
-  <div class="field">
-    <%= f.label :content %><br>
-    <%= f.text_area :content, :cols => 80, :rows => 30, :wrap => :off %>
-  </div>
+
+  <!-- Nav tabs -->
+  <ul class="nav nav-tabs" role="tablist">
+    <li role="presentation" class="active">
+      <a href="#write" aria-controls="write" role="tab" data-toggle="tab">Write</a>
+    </li>
+    <li role="presentation">
+      <a href="#preview" aria-controls="preview" role="tab" data-toggle="tab">Preview</a>
+    </li>
+  </ul>
+
+  <div class="field form-group">
+    <!-- Tab panes -->
+    <div class="tab-content">
+
+      <!-- Write -->
+      <div role="tabpanel" class="tab-pane active" id="write">
+        <%= f.text_area :content, :rows => 25, :wrap => :off %>
+      </div>
+
+      <!-- Preview -->
+      <div role="tabpanel" class="tab-pane markdown-body" id="preview">
+      </div>
+
+    </div><!-- /tab-content -->
+  </div><!-- /form-group -->
+
   <div class="actions">
     <%= f.submit %>
   </div>

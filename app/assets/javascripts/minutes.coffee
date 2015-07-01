@@ -28,6 +28,10 @@ getOriginalMinuteAsJSON = (fst, lst) ->
   json.body  = json.content.split("\n")[fst-1 .. lst-1].join("\n")
   return json
 
+renderMarkdown = (text, update_element) ->
+  $.post '/minutes/preview', {text: text}, (data) ->
+    $(update_element).html(data)
+
 # Stub getOriginalMinuteAsJSON for test
 getOriginalMinuteAsJSON_Stub = (fst, lst) ->
   return {
@@ -150,7 +154,15 @@ setupAutoCompleteEmoji = (element) ->
     onKeydown: (e, commands) ->
       return commands.KEY_ENTER if e.ctrlKey && e.keyCode == 74 # CTRL-J
 
+setupTabCallback = ->
+  $('a[data-toggle="tab"]').on 'shown.bs.tab', (e) ->
+    old = $(e.relatedTarget).attr('href') # previous active tab
+    cur = $(e.target).attr('href')  # newly activated tab
+    if $(cur).attr('id') == "preview"
+      renderMarkdown($(old).children('textarea').val(), $(cur))
+
 ready = ->
+  setupTabCallback()
   setupAutoCompleteEmoji('#minute_content')
   $('.action-item').click (event) ->
     if range = getSelectionLineRange()

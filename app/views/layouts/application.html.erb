@@ -2,6 +2,7 @@
 <html>
   <head>
     <title>jay</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <%= stylesheet_link_tag 'application', media: 'all', 'data-turbolinks-track' => true %>
     <%= javascript_include_tag 'application', 'data-turbolinks-track' => true %>
     <%= csrf_meta_tags %>
@@ -60,7 +61,7 @@
       </div><!-- flash row -->
 
       <div class="row">
-        <div class="col-xs-12">
+        <div class="col-md-offset-2 col-md-8">
           <%= yield %>
         </div><!-- col -->
       </div><!-- row -->

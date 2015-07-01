@@ -16,11 +16,11 @@
     <%= f.text_field :title, class: 'form-control' %>
   </div>
   <div class="field form-group">
-    <%= f.label :dtstart %><br>
+    <%= f.label :started %><br>
     <%= f.datetime_local_field :dtstart, class: 'form-control'  %>
   </div>
   <div class="field form-group">
-    <%= f.label :dtend %><br>
+    <%= f.label :finished %><br>
     <%= f.datetime_local_field :dtend, class: 'form-control'  %>
   </div>
   <div class="field form-group">
@@ -28,9 +28,13 @@
     <%= f.text_field :location, class: 'form-control'  %>
   </div>
   <div class="field form-group">
-    <%= f.label :author_name %><br>
-    <%= f.text_field :author_id, class: 'form-control'  %>
+    <%= f.label :author %><br>
+    <%= user_avatar_icon_tag(@minute.author) %>
+    <%= f.label "#{'@' + @minute.author.screen_name rescue '???'}" %>
+    <%= f.hidden_field :author_id, class: 'form-control'  %>
   </div>
+
+  <br>
 
   <!-- Nav tabs -->
   <ul class="nav nav-tabs" role="tablist">
@@ -48,7 +52,7 @@
 
       <!-- Write -->
       <div role="tabpanel" class="tab-pane active" id="write">
-        <%= f.text_area :content, :rows => 25, :wrap => :off %>
+        <%= f.text_area :content, :rows => 20, :wrap => :off %>
       </div>
 
       <!-- Preview -->
@@ -58,7 +62,7 @@
     </div><!-- /tab-content -->
   </div><!-- /form-group -->
 
-  <div class="actions">
-    <%= f.submit %>
+  <div class="actions form-group">
+    <%= f.submit class: 'btn btn-large btn-primary' %>
   </div>
 <% end %>

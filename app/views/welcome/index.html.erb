@@ -2,11 +2,8 @@
   <% if User.current %>
     <div class="row">
       <% if avatar_url = User.current.avatar_url %>
-        <% sep = (/\?/ =~ avatar_url) ? "&" : "?" %>
-        <% img = "#{avatar_url}#{sep}s=128" %>
         <% name = User.current.screen_name %>
-        <%= link_to image_tag(img, size: "64x64", alt: "@#{name}",
-                  class: "avatar"), "https://github.com/#{name}" %>
+        <%= link_to user_avatar_icon_tag(User.current, 64), "https://github.com/#{name}" %>
         <h2><%= User.current.name %></h2>
       <% end %>
     </div>

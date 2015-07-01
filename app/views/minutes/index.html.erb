@@ -15,7 +15,7 @@
     <% @minutes.each do |minute| %>
       <tr>
         <td><%= minute.title %></td>
-        <td><%= minute.dtstart.strftime("%Y-%m-%d") %></td>
+        <td><%= minute.dtstart.strftime("%Y-%m-%d") rescue nil %></td>
         <td><%= minute.location %></td>
         <td><%= minute.author && minute.author.name %></td>
         <td><%= link_to 'Show', minute %></td>
@@ -28,4 +28,4 @@
 
 <br>
 
-<%= link_to 'New Minute', new_minute_path %>
+<%= new_content new_minute_path %>

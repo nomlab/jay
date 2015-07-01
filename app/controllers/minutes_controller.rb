@@ -10,6 +10,11 @@ class MinutesController < ApplicationController
   # GET /minutes/1
   # GET /minutes/1.json
   def show
+    respond_to do |format|
+      format.html {}
+      format.json {}
+      format.text {render plain: JayFlavoredMarkdownToPlainTextConverter.new(@minute.content).content}
+    end
   end
 
   # GET /minutes/new

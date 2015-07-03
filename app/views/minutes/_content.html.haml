@@ -1,0 +1,4 @@
+- require "markdown_converter"
+.markdown-body
+  = raw ::JayFlavoredMarkdownConverter.new(text).content
+  %button.action-item New Issue

@@ -1,0 +1,50 @@
+= form_for(@minute) do |f|
+  - if @minute.errors.any?
+    #error_explanation
+      %h2
+        = pluralize(@minute.errors.count, "error")
+        prohibited this minute from being saved:
+      %ul
+        - @minute.errors.full_messages.each do |message|
+          %li= message
+  .field.form-group
+    = f.label :title
+    %br/
+    = f.text_field :title, class: 'form-control'
+  .field.form-group
+    = f.label :started
+    %br/
+    = f.datetime_local_field :dtstart, class: 'form-control'
+  .field.form-group
+    = f.label :finished
+    %br/
+    = f.datetime_local_field :dtend, class: 'form-control'
+  .field.form-group
+    = f.label :location
+    %br/
+    = f.text_field :location, class: 'form-control'
+  .field.form-group
+    = f.label :author
+    %br/
+    = user_avatar_icon_tag(@minute.author)
+    = f.label "#{'@' + @minute.author.screen_name rescue '???'}"
+    = f.hidden_field :author_id, class: 'form-control'
+  %br/
+  / Nav tabs
+  %ul.nav.nav-tabs{:role => "tablist"}
+    %li.active{:role => "presentation"}
+      %a{"aria-controls" => "write", "data-toggle" => "tab", :href => "#write", :role => "tab"} Write
+    %li{:role => "presentation"}
+      %a{"aria-controls" => "preview", "data-toggle" => "tab", :href => "#preview", :role => "tab"} Preview
+  .field.form-group
+    / Tab panes
+    .tab-content
+      / Write
+      #write.tab-pane.active{:role => "tabpanel"}
+        = f.text_area :content, :rows => 20, :wrap => :off
+      / Preview
+      #preview.tab-pane.markdown-body{:role => "tabpanel"}
+    / /tab-content
+  / /form-group
+  .actions.form-group
+    = f.submit class: 'btn btn-large btn-primary'

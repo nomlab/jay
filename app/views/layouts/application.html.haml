@@ -1,0 +1,57 @@
+!!!
+%html
+  %head
+    %meta{:content => "text/html; charset=UTF-8", "http-equiv" => "Content-Type"}/
+    %title jay
+    %meta{:content => "width=device-width, initial-scale=1", :name => "viewport"}/
+    = stylesheet_link_tag 'application', media: 'all', 'data-turbolinks-track' => true
+    = javascript_include_tag 'application', 'data-turbolinks-track' => true
+    = csrf_meta_tags
+    = favicon_link_tag 'jay32.png'
+  %body
+    / navbar
+    %nav.navbar.navbar-inverse.navbar-fixed-top.navbar-default
+      .container-fluid
+        / navbar header
+        .navbar-header
+          %button.navbar-toggle.collapsed.pull-left{"data-target" => "#navbar", "data-toggle" => "collapse", :type => "button"}
+            %span.icon-bar
+            %span.icon-bar
+            %span.icon-bar
+          = link_to image_tag('jay32.png'), 'https://github.com/nomlab/jay', :class => "navbar-brand"
+        / navbar header
+        / navbar links for collapse toggling
+        #navbar.collapse.navbar-collapse
+          / left navbar
+          %ul.nav.navbar-nav.navbar-left
+            %li= link_to 'Minutes', minutes_path
+            %li= link_to((User.current.name rescue ''), root_path)
+          / right navbar
+          %ul.nav.navbar-nav.navbar-right
+            %li
+              - if session[:user_id]
+                = link_to glyphicon('log-out'), {:controller => 'sessions', :action => 'logout'}, :class => 'navbar-link'
+              - else
+                = link_to glyphicon('log-in'), '/auth/github', :class => 'navbar-link'
+        / navbar links for collapse toggling
+      / container-fluid
+    / navbar
+    / main
+    .container-fluid
+      / flash
+      .row
+        .col-xs-12
+          - conv = {:notice => :success, :error => :danger}
+          - [:notice, :error].each do |typ|
+            - unless flash[typ].blank?
+              %div{:class => "alert alert-#{conv[typ]}", :role => "alert"}
+                = flash[typ]
+                - flash.discard(typ)
+        / flash col
+      / flash row
+      .row
+        .col-md-offset-2.col-md-8
+          = yield
+        / col
+      / row
+    / container-fluid

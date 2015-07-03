@@ -452,6 +452,25 @@ class JayFillColumns < HTML::Pipeline::TextFilter
   end
 end
 
+#
+# Shorten 4 indent to 2 indent.
+#
+class JayShortenIndent < HTML::Pipeline::TextFilter
+  def call
+    @text = @text.split("\n").map do |line|
+      shorten_indent(line)
+    end.join("\n")
+  end
+
+  private
+
+  def shorten_indent(line)
+    return line unless /\A(\s+)(.*)/ =~ line
+    indent_depth = $1.length / 2
+    return "#{' ' * indent_depth}#{$2}"
+  end
+end
+
 ################################################################
 ## HTML to HTML filters
 
@@ -648,6 +667,7 @@ class JayFlavoredMarkdownToPlainTextConverter
       JayAddLabelToListItems,
       JayAddCrossReference,
       JayRemoveMarkupElements,
+      JayShortenIndent,
       JayFillColumns,
     ], context.merge(@options)
   end

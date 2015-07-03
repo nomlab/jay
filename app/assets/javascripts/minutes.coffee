@@ -167,13 +167,13 @@ getGithubTargetRepositoryName = (res) ->
   repos_list
 
 dipslaySelectionLineRange = (str) ->
-  $('#selected-range').replaceWith("<pre id='#selected-range'>#{str}</pre>")
+  $('#selected-range').append("#{str}")
 
 displayGithubRepository = (repos_list) ->
   str_repos = ""
   for r in repos_list
     str_repos = str_repos + "<li class='list-group-item'><input type='checkbox'>#{r}</input></li>"
-  $('#repositores-list').replaceWith("<ul class='list-group' id='repositores-list'>#{str_repos}</ul>")
+  $('#repositories-list').replaceWith("<ul class='list-group' id='repositories-list'>#{str_repos}</ul>")
 
 ready = ->
   res = $. ajax
@@ -192,21 +192,22 @@ ready = ->
       repos_list = repos_list.filter((x, i, self) ->
         self.indexOf(x) == i
       )
+      repos_list = repos_list.map (r) ->
+        "#{minute.organization}/" + r
       displayGithubRepository(repos_list)
       dipslaySelectionLineRange(chopIndent(minute.body))
       $("#choose-repos-modal").modal("show")
+    else
+      alert "No valid range is specified."
+    event.preventDefault()
 
-    # if range = getSelectionLineRange()
-    #   minute = getOriginalMinuteAsJSON(range.fst, range.lst)
-    #   repos = "#{minute.organization}/" + getGithubTargetRepository(minute)[0]
-    #   issue =
-    #     title: removeTrailer(removeHeader(minute.body.split("\n")[-1..][0]))
-    #     body: chopIndent(minute.body)
-    #     labels: "" # FIXME
-    #     assignee: minute.screen_name # FIXME
-    #   newGithubIssue(repos, issue)
-    # else
-    #   alert "No valid range is specified."
-    # event.preventDefault()
+  $('#submit-button').click ->
+    param = $('#submit-form').serializeArray()
+    issue =
+      title: removeTrailer(removeHeader(param[0].value.split("\n")[-1..][0]))
+      body: param[0].value
+      labels: "" # FIXME
+      # assignee: minute.screen_name # FIXME
+    newGithubIssue(param[1].value, issue)
 
 $(document).ready(ready)

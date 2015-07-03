@@ -5,13 +5,16 @@
         %button.close{"aria-hidden" => "true", "data-dismiss" => "modal", :type => "button"} ×
         %h4.modal-title Choose Repository
       .modal-body
-        %form#choose-repos.modal-body
-          %b Massage:
-          %pre#selected-range
-            :preserve
-              
-                                  %b Repositores
-          %ul#repositores-list.list-group
+        %form#submit-form
+          %p
+            %b Message:
+          %p
+            %textarea#selected-range{:name => "message"}
+          %p
+            %b Repositories
+          %p
+            %input#repository{:name => "repository", :type => "text"}/
+          %ul#repositories-list.list-group
             %li.list-group-item
               %input{:type => "checkbox"}/
       .modal-footer

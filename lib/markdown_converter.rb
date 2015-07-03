@@ -41,7 +41,7 @@ class LeveledCounter
   end
 
   def next
-    new {|c| c[level].succ!}
+    new {|c| c[level] && c[level].succ!}
   end
 
   def next_level
@@ -91,7 +91,7 @@ class ListItemLeveledCounter < LeveledCounter
   COUNTER_TYPE = :item
 
   def label
-    "(#{mark})"
+    mark && " (#{mark})"
   end
 end
 
@@ -101,7 +101,7 @@ class SectionCounter < LeveledCounter
   COUNTER_TYPE = :section
 
   def label
-    full_mark
+    mark && " #{full_mark}"
   end
 end
 
@@ -277,7 +277,7 @@ class JayAddLabelToListItems < HTML::Pipeline::TextFilter
 
     # store <<name>> to hash
     @text = items.filter do |header, count|
-      header.sub(/^(\s*[+-]|##+)(\s+)/){|x| "#{$1} #{count.label}#{$2}"}
+      header.sub(/^(\s*[+-]|##+)(\s+)/){|x| "#{$1}#{count.label}#{$2}"}
     end.join("\n")
   end
 end

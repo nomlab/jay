@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 if __FILE__ == $0
   ################################################################
   # rbenv support:
@@ -494,6 +495,24 @@ class JayShortenIndent < HTML::Pipeline::TextFilter
   end
 end
 
+class JayAddLink < HTML::Pipeline::TextFilter
+  def call
+    lines = @text.split("\n")
+
+    @text = lines.map do |line|
+      line.gsub(/-->\((.+?)\)/) do |macth|
+        "-->([#{$1}](){: .action-item})"
+      end
+    end
+
+    @text = @text.map do |line|
+      line.gsub(/([A-Z_a-z\d]+\/)?#\d+/) do |match|
+        "[#{match}](){: .action-item}"
+      end
+    end.join("\n")
+  end
+end
+
 ################################################################
 ## HTML to HTML filters
 
@@ -613,7 +632,6 @@ class JayCustomItemBullet
   end
 end
 
-
 #
 # Jay Flavored Markdown to HTML converter
 #
@@ -648,6 +666,7 @@ class JayFlavoredMarkdownConverter
       JayFixIndentDepth,
       JayAddLabelToListItems,
       JayAddCrossReference,
+      JayAddLink,
       JayFlavoredMarkdownFilter,
       JayCustomItemBullet::Filter,
       HTML::Pipeline::AutolinkFilter,

@@ -4,7 +4,7 @@ Rails.application.routes.draw do
   get "/auth/:provider/callback", to: "sessions#create"
   get "/sessions/logout", to: "sessions#logout"
 
-  post"/minutes/preview", to: "minutes#preview"
+  post "/minutes/preview", to: "minutes#preview"
 
   resources :minutes
   resources :users

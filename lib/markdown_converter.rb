@@ -425,6 +425,7 @@ class JayFillColumns < HTML::Pipeline::TextFilter
 
   # Get width of string considering multibyte character
   def str_mb_width(str)
+    return 0 if str.empty?
     return str.each_char.map{|c| char_mb_width(c)}.inject(:+)
   end
 

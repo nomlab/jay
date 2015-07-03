@@ -64,6 +64,10 @@ class LeveledCounter
     self.class::COUNTER_TYPE
   end
 
+  def level
+    @counter.size - 1
+  end
+
   private
 
   def init_values
@@ -72,10 +76,6 @@ class LeveledCounter
 
   def count_separator
     self.class::COUNT_SEPARATOR
-  end
-
-  def level
-    @counter.size - 1
   end
 
   def new
@@ -266,6 +266,28 @@ end
 
 ################################################################
 ## Markdown to Markdown filters
+
+#
+# Fix the depth of the indent to multiple of 4(INDENT_DEPTH)
+#
+class JayFixIndentDepth < HTML::Pipeline::TextFilter
+  INDENT_DEPTH = 4
+
+  def call
+    lines = @text.split("\n")
+    items = MarkdownEnumerator.new(lines)
+
+    @text = items.filter do |header, count|
+      header.sub(/^(\s*)([*+-])(\s+)/){|x| "#{valid_indent(count)}#{$2}#{$3}"}
+    end.join("\n")
+  end
+
+  private
+
+  def valid_indent(count)
+    " " * INDENT_DEPTH * count.level
+  end
+end
 
 #
 # Convert list item header ``+`` text to ``+ (A)``
@@ -623,6 +645,7 @@ class JayFlavoredMarkdownConverter
 
   def pipeline
     HTML::Pipeline.new [
+      JayFixIndentDepth,
       JayAddLabelToListItems,
       JayAddCrossReference,
       JayFlavoredMarkdownFilter,
@@ -665,6 +688,7 @@ class JayFlavoredMarkdownToPlainTextConverter
 
   def pipeline
     HTML::Pipeline.new [
+      JayFixIndentDepth,
       JayAddLabelToListItems,
       JayAddCrossReference,
       JayRemoveMarkupElements,

@@ -10,10 +10,33 @@ getSelectionRange = ->
 # returns {fst: FIRST_LINE_NUMBER, lst: LAST_LINE_NUMBER}
 getSelectionLineRange = ->
   return undefined if !(range = getSelectionRange())
-  fst = Number $(range.fst).attr('data-linenum')
-  lst = Number $(range.lst).attr('data-linenum')
+  fst = Number findNearestLinenum($(range.fst), -1)
+  lst = Number findNearestLinenum($(range.lst),  1)
   return undefined if isNaN(fst) || isNaN(lst)
   return fst: fst, lst: lst
+
+# Get the nearest data-linenum attribute from ELEMENT
+# including itself. DIRECTION should be +1 or -1
+#
+# returns: value of data-linenum attribute
+#
+findNearestLinenum = (element, direction = -1) ->
+  name = 'data-linenum'
+  sel = "[#{name}]"
+  ele = $(element)
+  return ele.attr(name) if ele.is(sel)
+
+  # Since ele does not have data-linenum,
+  # inject a dummy data-linenum to ele, and
+  # find its index among the other data-lineum holders.
+  ele.attr(name, '??')
+  index = $(sel).index(ele)
+
+  buddy = $(sel)[index + direction]
+  ele.removeAttr(name)
+  return $(buddy).attr(name)
+
+
 
 # Get the markdown source code of the current page.
 #   fst: first line number

@@ -7,6 +7,12 @@
       .modal-body
         %form#submit-form
           %p
+            %b Title
+          %p
+            %input#title{:autocomplete => "off", :name => "title", :type => "text", :style => "width:100%"}
+          %p
+            %b Description
+          %p
             %textarea#selected-range{:name => "message", :rows => "7"}
           %p
             %b Target repository

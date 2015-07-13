@@ -207,7 +207,7 @@ setupTabCallback = ->
     if $(cur).attr('id') == "preview"
       renderMarkdown($(old).children('textarea').val(), $(cur))
 
-dipslaySelectionLineRange = (str) ->
+displaySelectionLineRange = (str) ->
   $('#selected-range').append("#{str}")
 
 displayGithubRepository = (repos_list) ->
@@ -217,6 +217,9 @@ displayGithubRepository = (repos_list) ->
   $('#repositories-list').replaceWith("<p id='repositories-list'><i class='fa fa-lightbulb-o fa-fw'></i>#{str_repos}<p>")
   $('.candidate-repository').click (event) ->
     $('#repository').val(event.target.innerHTML)
+
+displayTitle = (title) ->
+  $('#title').val(title)
 
 getRepository = () ->
   res = $. ajax
@@ -247,7 +250,8 @@ ready = ->
       setupAutoCompleteRepository('#repository', repos_list)
       repos_list = getGithubTargetRepository(minute, repos_list)
       displayGithubRepository(repos_list)
-      dipslaySelectionLineRange(chopIndent(line))
+      displaySelectionLineRange(chopIndent(line))
+      displayTitle(removeTrailer(removeHeader(line.split("\n")[-1..][0])))
       $('#create-issue-modal').modal("show")
     else
       alert "No valid range is specified."
@@ -255,13 +259,13 @@ ready = ->
 
   $('#submit-button').click ->
     param = $('#submit-form').serializeArray()
-    if param[1].value
+    if param[2].value
       issue =
-        title: removeTrailer(removeHeader(param[0].value.split("\n")[-1..][0]))
-        body: param[0].value
+        title: param[0].value
+        body: param[1].value
         labels: "" # FIXME
         # assignee: minute.screen_name # FIXME
-      newGithubIssue("#{minute.organization}/#{param[1].value}", issue)
+      newGithubIssue("#{minute.organization}/#{param[2].value}", issue)
       $('#create-issue-modal').modal("hide")
     else
       alert "No inputed repository"

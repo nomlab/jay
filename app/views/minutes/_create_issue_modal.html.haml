@@ -1,0 +1,19 @@
+#create-issue-modal.modal.fade
+  .modal-dialog
+    .modal-content
+      .modal-header
+        %button.close{"aria-hidden" => "true", "data-dismiss" => "modal", :type => "button"} ×
+        %h4.modal-title Create issue
+      .modal-body
+        %form#submit-form
+          %p
+            %textarea#selected-range{:name => "message", :rows => "7"}
+          %p
+            %b Target repository
+          %p
+            %input#repository{:autocomplete => "off", :name => "repository", :type => "text"}/
+          %p
+          %p#repositories-list
+      .modal-footer
+        %button.btn{"aria-hidden" => "true", "data-dismiss" => "modal"} Cancel
+        %button#submit-button.btn.btn-primary{:type => "submit"} OK

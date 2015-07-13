@@ -1,22 +1,19 @@
-#choose-repos-modal.modal.fade
+#create-issue-modal.modal.fade
   .modal-dialog
     .modal-content
       .modal-header
         %button.close{"aria-hidden" => "true", "data-dismiss" => "modal", :type => "button"} ×
-        %h4.modal-title Choose Repository
+        %h4.modal-title Create issue
       .modal-body
         %form#submit-form
           %p
-            %b Message:
+            %textarea#selected-range{:name => "message", :rows => "7"}
           %p
-            %textarea#selected-range{:name => "message"}
+            %b Target repository
           %p
-            %b Repositories
+            %input#repository{:autocomplete => "off", :name => "repository", :type => "text"}/
           %p
-            %input#repository{:name => "repository", :type => "text"}/
-          %ul#repositories-list.list-group
-            %li.list-group-item
-              %input{:type => "checkbox"}/
+          %p#repositories-list
       .modal-footer
         %button.btn{"aria-hidden" => "true", "data-dismiss" => "modal"} Cancel
         %button#submit-button.btn.btn-primary{:type => "submit"} OK

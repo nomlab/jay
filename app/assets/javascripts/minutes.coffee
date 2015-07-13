@@ -19,13 +19,12 @@ getSelectionLineRange = ->
 #   fst: first line number
 #   lst: last line number
 # returns JSON encoded markdown source code
-getOriginalMinuteAsJSON = (fst, lst) ->
+getOriginalMinuteAsJSON = () ->
   res = $.ajax
     url: window.location.pathname + ".json"
     async: false
     dataType: 'json'
   json = res.responseJSON
-  json.body  = json.content.split("\n")[fst-1 .. lst-1].join("\n")
   return json
 
 renderMarkdown = (text, update_element) ->
@@ -129,8 +128,11 @@ getGithubPublicRepositoriesJSONP = (organization, full, callback) ->
 getGithubTargetRepository = (minute, repos_list) ->
   regexp = array_to_regexp(repos_list, "g")
   repos = minute.content.match(regexp)
+  repos_list = repos.filter((x, i, self) ->
+    self.indexOf(x) == i
+  )
   # alert (if repos then repos.join("\n") else "NO match")
-  repos
+  repos_list
 
 setupAutoCompleteEmoji = (element) ->
   img_url = "https://raw.githubusercontent.com/Ranks/emojify.js/master/src/images/emoji"
@@ -182,55 +184,63 @@ setupTabCallback = ->
     if $(cur).attr('id') == "preview"
       renderMarkdown($(old).children('textarea').val(), $(cur))
 
-getGithubTargetRepositoryName = (res) ->
-  repos_list = []
-  for r in res.responseJSON
-    repos_list.push (r[1][1])
-  repos_list
-
 dipslaySelectionLineRange = (str) ->
   $('#selected-range').append("#{str}")
 
 displayGithubRepository = (repos_list) ->
   str_repos = ""
   for r in repos_list
-    str_repos = str_repos + "<li class='list-group-item'><input type='checkbox'>#{r}</input></li>"
-  $('#repositories-list').replaceWith("<ul class='list-group' id='repositories-list'>#{str_repos}</ul>")
+    str_repos = str_repos + "<label class='label label-primary candidate-repository'>#{r}</label> "
+  $('#repositories-list').replaceWith("<p id='repositories-list'><i class='fa fa-lightbulb-o fa-fw'></i>#{str_repos}<p>")
+  $('.candidate-repository').click (event) ->
+    $('#repository').val(event.target.innerHTML)
 
-ready = ->
+getRepository = () ->
   res = $. ajax
     async: false
     type: "GET"
     url: "/users/repositories"
     dataType: "json"
+  createRegularExpression(res)
+
+createRegularExpression = (data) ->
+  data_list = []
+  for d in data.responseJSON
+    data_list.push(d[1][1])
+  data_list
+
+getSelectionLine = (body, fst, lst) ->
+    line = body.content.split("\n")[fst-1 .. lst-1].join("\n")
+
+ready = ->
+  repos_list = getRepository()
+  minute = getOriginalMinuteAsJSON()
   setupAutoCompleteEmoji('#minute_content')
   setupTabCallback()
 
   $('.action-item').click (event) ->
     if range = getSelectionLineRange()
-      minute = getOriginalMinuteAsJSON(range.fst, range.lst)
-      repos_list = getGithubTargetRepositoryName(res)
+      line = getSelectionLine(minute, range.fst, range.lst)
       setupAutoCompleteRepository('#repository', repos_list)
       repos_list = getGithubTargetRepository(minute, repos_list)
-      repos_list = repos_list.filter((x, i, self) ->
-        self.indexOf(x) == i
-      )
-      repos_list = repos_list.map (r) ->
-        "#{minute.organization}/" + r
       displayGithubRepository(repos_list)
-      dipslaySelectionLineRange(chopIndent(minute.body))
-      $("#choose-repos-modal").modal("show")
+      dipslaySelectionLineRange(chopIndent(line))
+      $('#create-issue-modal').modal("show")
     else
       alert "No valid range is specified."
     event.preventDefault()
 
   $('#submit-button').click ->
     param = $('#submit-form').serializeArray()
-    issue =
-      title: removeTrailer(removeHeader(param[0].value.split("\n")[-1..][0]))
-      body: param[0].value
-      labels: "" # FIXME
-      # assignee: minute.screen_name # FIXME
-    newGithubIssue(param[1].value, issue)
+    if param[1].value
+      issue =
+        title: removeTrailer(removeHeader(param[0].value.split("\n")[-1..][0]))
+        body: param[0].value
+        labels: "" # FIXME
+        # assignee: minute.screen_name # FIXME
+      newGithubIssue("#{minute.organization}/#{param[1].value}", issue)
+      $('#create-issue-modal').modal("hide")
+    else
+      alert "No inputed repository"
 
 $(document).ready(ready)

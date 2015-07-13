@@ -1,4 +1,5 @@
 - require "markdown_converter"
+= render :partial => "minutes/create_issue_modal.html.haml"
 .markdown-body
   = raw ::JayFlavoredMarkdownConverter.new(text).content
   %button.action-item New Issue

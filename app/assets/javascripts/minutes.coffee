@@ -126,8 +126,7 @@ getGithubPublicRepositoriesJSONP = (organization, full, callback) ->
 # Candidates are scanned from user's profile
 # via GitHub API
 #
-getGithubTargetRepository = (minute) ->
-  repos_list = getGithubPublicRepositories(minute.organization)
+getGithubTargetRepository = (minute, repos_list) ->
   regexp = array_to_regexp(repos_list, "g")
   repos = minute.content.match(regexp)
   # alert (if repos then repos.join("\n") else "NO match")
@@ -161,21 +160,53 @@ setupTabCallback = ->
     if $(cur).attr('id') == "preview"
       renderMarkdown($(old).children('textarea').val(), $(cur))
 
+getGithubTargetRepositoryName = (res) ->
+  repos_list = []
+  for r in res.responseJSON
+    repos_list.push (r[1][1])
+  repos_list
+
+dipslaySelectionLineRange = (str) ->
+  $('#selected-range').replaceWith("<pre id='#selected-range'>#{str}</pre>")
+
+displayGithubRepository = (repos_list) ->
+  str_repos = ""
+  for r in repos_list
+    str_repos = str_repos + "<li class='list-group-item'><input type='checkbox'>#{r}</input></li>"
+  $('#repositores-list').replaceWith("<ul class='list-group' id='repositores-list'>#{str_repos}</ul>")
+
 ready = ->
-  setupTabCallback()
+  res = $. ajax
+    async: false
+    type: "GET"
+    url: "/users/repositories"
+    dataType: "json"
   setupAutoCompleteEmoji('#minute_content')
+  setupTabCallback()
+
   $('.action-item').click (event) ->
     if range = getSelectionLineRange()
       minute = getOriginalMinuteAsJSON(range.fst, range.lst)
-      repos = "#{minute.organization}/" + getGithubTargetRepository(minute)[0]
-      issue =
-        title: removeTrailer(removeHeader(minute.body.split("\n")[-1..][0]))
-        body: chopIndent(minute.body)
-        labels: "" # FIXME
-        assignee: minute.screen_name # FIXME
-      newGithubIssue(repos, issue)
-    else
-      alert "No valid range is specified."
-    event.preventDefault()
+      repos_list = getGithubTargetRepositoryName(res)
+      repos_list = getGithubTargetRepository(minute, repos_list)
+      repos_list = repos_list.filter((x, i, self) ->
+        self.indexOf(x) == i
+      )
+      displayGithubRepository(repos_list)
+      dipslaySelectionLineRange(chopIndent(minute.body))
+      $("#choose-repos-modal").modal("show")
+
+    # if range = getSelectionLineRange()
+    #   minute = getOriginalMinuteAsJSON(range.fst, range.lst)
+    #   repos = "#{minute.organization}/" + getGithubTargetRepository(minute)[0]
+    #   issue =
+    #     title: removeTrailer(removeHeader(minute.body.split("\n")[-1..][0]))
+    #     body: chopIndent(minute.body)
+    #     labels: "" # FIXME
+    #     assignee: minute.screen_name # FIXME
+    #   newGithubIssue(repos, issue)
+    # else
+    #   alert "No valid range is specified."
+    # event.preventDefault()
 
 $(document).ready(ready)

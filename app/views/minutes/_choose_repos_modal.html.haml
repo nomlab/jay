@@ -1,0 +1,19 @@
+#choose-repos-modal.modal.fade
+  .modal-dialog
+    .modal-content
+      .modal-header
+        %button.close{"aria-hidden" => "true", "data-dismiss" => "modal", :type => "button"} ×
+        %h4.modal-title Choose Repository
+      .modal-body
+        %form#choose-repos.modal-body
+          %b Massage:
+          %pre#selected-range
+            :preserve
+              
+                                  %b Repositores
+          %ul#repositores-list.list-group
+            %li.list-group-item
+              %input{:type => "checkbox"}/
+      .modal-footer
+        %button.btn{"aria-hidden" => "true", "data-dismiss" => "modal"} Cancel
+        %button#submit-button.btn.btn-primary{:type => "submit"} OK

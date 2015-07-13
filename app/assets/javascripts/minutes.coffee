@@ -153,6 +153,28 @@ setupAutoCompleteEmoji = (element) ->
     onKeydown: (e, commands) ->
       return commands.KEY_ENTER if e.ctrlKey && e.keyCode == 74 # CTRL-J
 
+setupAutoCompleteRepository = (element, repos_list) ->
+  $(element).textcomplete [
+      match: /([\-+\w]*)$/
+
+      search: (term, callback) ->
+        callback $.map repos_list, (repos) ->
+          return repos if repos.indexOf(term) >= 0
+          return null
+
+      replace:  (value) ->
+        "#{value}"
+
+      index: 1
+    ],
+    onKeydown: (e, commands) ->
+      return commands.KEY_ENTER if e.ctrlKey && e.keyCode == 74 # CTRL-J
+    zIndex: 10000
+    listPosition: (position) ->
+      this.$el.css(this._applyPlacement(position))
+      this.$el.css('position', 'absolute')
+      return this
+
 setupTabCallback = ->
   $('a[data-toggle="tab"]').on 'shown.bs.tab', (e) ->
     old = $(e.relatedTarget).attr('href') # previous active tab
@@ -188,6 +210,7 @@ ready = ->
     if range = getSelectionLineRange()
       minute = getOriginalMinuteAsJSON(range.fst, range.lst)
       repos_list = getGithubTargetRepositoryName(res)
+      setupAutoCompleteRepository('#repository', repos_list)
       repos_list = getGithubTargetRepository(minute, repos_list)
       repos_list = repos_list.filter((x, i, self) ->
         self.indexOf(x) == i

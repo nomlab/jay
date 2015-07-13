@@ -85,3 +85,7 @@ gem 'bootstrap-sass', '~> 3.3.4'
 
 # haml
 gem 'haml-rails'
+
+# for extension font
+gem 'font-awesome-sass'
+

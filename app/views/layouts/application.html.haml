@@ -18,6 +18,7 @@
             %span.icon-bar
             %span.icon-bar
             %span.icon-bar
+            %span.icon-bar
           = link_to image_tag('jay32.png'), 'https://github.com/nomlab/jay', :class => "navbar-brand"
         / navbar header
         / navbar links for collapse toggling
@@ -25,6 +26,7 @@
           / left navbar
           %ul.nav.navbar-nav.navbar-left
             %li= link_to 'Minutes', minutes_path
+            %li= link_to 'Tags', tags_path
             %li= link_to((User.current.name rescue ''), root_path)
           / right navbar
           %ul.nav.navbar-nav.navbar-right

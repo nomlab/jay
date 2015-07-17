@@ -200,12 +200,104 @@ setupAutoCompleteRepository = (element, repos_list) ->
       this.$el.css('position', 'absolute')
       return this
 
+setupAutoCompleteTag = (element) ->
+  $.ajax
+    async:     false
+    type:      "GET"
+    url:       "/tags"
+    dataType:  "json"
+    success:   (tags, status, xhr)   ->
+      window.tag_list = $.map tags, (tag) ->
+        return tag.name
+
+  $(element).textcomplete [
+      match: /([\-+\w]*)$/
+
+      search: (term, callback) ->
+        callback $.map window.tag_list, (tag) ->
+          return tag if tag.indexOf(term) >= 0
+          return null
+
+      replace: (value) ->
+        "#{value}"
+
+      index: 1
+    ],
+    onKeydown: (e, commands) ->
+      return commands.KEY_ENTER if e.ctrlKey && e.keyCode == 74 # CTRL-J
+    zIndex: 10000
+    listPosition: (position) ->
+      this.$el.css(this._applyPlacement(position))
+      this.$el.css('position', 'absolute')
+      return this
+
 setupTabCallback = ->
   $('a[data-toggle="tab"]').on 'shown.bs.tab', (e) ->
     old = $(e.relatedTarget).attr('href') # previous active tab
     cur = $(e.target).attr('href')  # newly activated tab
     if $(cur).attr('id') == "preview"
       renderMarkdown($(old).children('textarea').val(), $(cur))
+
+setupAddTagButtonCallback = ->
+  $('#tag-add-button').on 'click', (e) ->
+    $('#tag-names').val("#{$('#tag-names').val()} #{$('#tag-name').val()}")
+    $('#tag-name').val("")
+    displayTagLabels()
+
+setupRemoveTagIconCallback = ->
+  $('.remove-tag-icon').on 'click', (e) ->
+    currentTagNames = $('#tag-names').val()
+    exp = "(^|\\s)#{$(this).attr('id')}(?=\\s|$)"
+    newTagNames = currentTagNames.replace(new RegExp(exp, 'g'), '')
+    $('#tag-names').val("#{newTagNames}")
+    displayTagLabels()
+
+setupMinuteSearchButtonCallback = ->
+  $('#search-minutes-by-tag').on 'click', (e) ->
+    $('tbody').empty()
+    tagName = $('#tag-name').val()
+    if tagName is ""
+      $. ajax
+        async: false
+        type: "GET"
+        url: "/minutes"
+        dataType: "json"
+        success:  (minutes, status, xhr)   ->
+          unless minutes is null
+            $.map minutes, (minute) ->
+              displayMinuteRow(minute)
+    else
+      $. ajax
+        async: false
+        type: "GET"
+        url: "/minutes/search_by_tag"
+        dataType: "json"
+        data:
+          tag_name: $('#tag-name').val()
+        success:  (minutes, status, xhr)   ->
+          unless minutes is null
+            $.map minutes, (minute) ->
+              displayMinuteRow(minute)
+
+displayMinuteRow = (minute) ->
+  $('tbody').append("<tr>\
+                       <td>#{minute.title || ""}</td>\
+                       <td>#{minute.dtstart || ""}</td>\
+                       <td>#{minute.location || ""}</td>\
+                       <td>#{minute.author.name || ""}</td>\
+                       <td><a href='/minutes/#{minute.id}'>Show</a></td>\
+                       <td><a href='/minutes/#{minute.id}/edit'>Edit</a></td>\
+                       <td><a href='/minutes/#{minute.id}' data-method='delete' rel='nofollow' data-confirm='Are you sure?'>Destroy</a></td>\
+                     </tr>")
+
+displayTagLabels = ->
+  $('#current-tags').empty()
+  $.map $('#tag-names').val().split(" "), (tag_name) ->
+    unless tag_name is ""
+      $('#current-tags').append("<span class='label label-primary tag-label'>\
+                                     <span class='glyphicon glyphicon-tag' aria-hidden='true'></span> #{tag_name} \
+                                   | <span id='#{tag_name}' class='glyphicon glyphicon-remove remove-tag-icon' aria-hidden='true'></span></span>")
+  setupRemoveTagIconCallback()
 
 displaySelectionLineRange = (str) ->
   $('#selected-range').append("#{str}")
@@ -242,7 +334,11 @@ ready = ->
   repos_list = getRepository()
   minute = getOriginalMinuteAsJSON()
   setupAutoCompleteEmoji('#minute_content')
+  setupAutoCompleteTag('#tag-name')
   setupTabCallback()
+  setupAddTagButtonCallback()
+  setupMinuteSearchButtonCallback()
+  displayTagLabels() if $('#tag-names').val()?
 
   $('.action-item').click (event) ->
     if range = getSelectionLineRange()

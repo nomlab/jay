@@ -1,3 +1,5 @@
+- @minute.tags.each do |tag|
+  = tag_label(tag)
 = render partial: 'content', locals: {text: @minute.content}
 = link_to 'Edit', edit_minute_path(@minute)
 |

@@ -1,10 +1,13 @@
 Rails.application.routes.draw do
 
+  resources :tags
+
   # omniauth callback
   get "/auth/:provider/callback", to: "sessions#create"
   get "/sessions/logout", to: "sessions#logout"
 
   post "/minutes/preview", to: "minutes#preview"
+  get "/minutes/search_by_tag", to: "minutes#search_by_tag"
 
   resources :minutes
  # resources :users

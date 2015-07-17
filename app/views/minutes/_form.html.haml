@@ -29,6 +29,18 @@
     = user_avatar_icon_tag(@minute.author)
     = f.label "#{'@' + @minute.author.screen_name rescue '???'}"
     = f.hidden_field :author_id, class: 'form-control'
+  .field.form-group
+    = f.label :tags
+    %br/
+    #current-tags
+    - tag_names = @minute.tags.map(&:name)
+    %input#tag-names{name: "tag_names", type: "hidden", value: "#{tag_names.join(' ')}"}
+    %br
+    .input-group
+      %input.form-control#tag-name{type: "text"}
+      %span.input-group-btn
+        %button.btn.btn-primary#tag-add-button{type: "button"} Add tag
+
   %br/
   / Nav tabs
   %ul.nav.nav-tabs{:role => "tablist"}

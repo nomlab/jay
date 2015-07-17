@@ -30,6 +30,7 @@ class MinutesController < ApplicationController
   # POST /minutes.json
   def create
     @minute = Minute.new(minute_params)
+    @minute.tags = parse_tag_names(params[:tag_names]) if params[:tag_names]
 
     respond_to do |format|
       if @minute.save
@@ -45,6 +46,7 @@ class MinutesController < ApplicationController
   # PATCH/PUT /minutes/1
   # PATCH/PUT /minutes/1.json
   def update
+    @minute.tags = parse_tag_names(params[:tag_names]) if params[:tag_names]
     respond_to do |format|
       if @minute.update(minute_params)
         format.html { redirect_to @minute, notice: 'Minute was successfully updated.' }
@@ -78,6 +80,13 @@ class MinutesController < ApplicationController
 
     # Never trust parameters from the scary internet, only allow the white list through.
     def minute_params
-      params.require(:minute).permit(:title, :dtstart, :dtend, :location, :author_id, :content)
+      params.require(:minute).permit(:title, :dtstart, :dtend, :location, :author_id, :content, :tag_ids => [] )
+    end
+
+    def parse_tag_names(tag_names)
+      tag_names.split.map do |tag_name|
+        tag = Tag.find_by(name: tag_name)
+        tag ? tag : Tag.create(name: tag_name)
+      end
     end
 end

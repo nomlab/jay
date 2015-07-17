@@ -200,12 +200,66 @@ setupAutoCompleteRepository = (element, repos_list) ->
       this.$el.css('position', 'absolute')
       return this
 
+setupAutoCompleteTag = (element) ->
+  $.ajax
+    async:     false
+    type:      "GET"
+    url:       "/tags"
+    dataType:  "json"
+    success:   (tags, status, xhr)   ->
+      window.tag_list = $.map tags, (tag) ->
+        return tag.name
+
+  $(element).textcomplete [
+      match: /([\-+\w]*)$/
+
+      search: (term, callback) ->
+        callback $.map window.tag_list, (tag) ->
+          return tag if tag.indexOf(term) >= 0
+          return null
+
+      replace: (value) ->
+        "#{value}"
+
+      index: 1
+    ],
+    onKeydown: (e, commands) ->
+      return commands.KEY_ENTER if e.ctrlKey && e.keyCode == 74 # CTRL-J
+    zIndex: 10000
+    listPosition: (position) ->
+      this.$el.css(this._applyPlacement(position))
+      this.$el.css('position', 'absolute')
+      return this
+
 setupTabCallback = ->
   $('a[data-toggle="tab"]').on 'shown.bs.tab', (e) ->
     old = $(e.relatedTarget).attr('href') # previous active tab
     cur = $(e.target).attr('href')  # newly activated tab
     if $(cur).attr('id') == "preview"
       renderMarkdown($(old).children('textarea').val(), $(cur))
+
+setupAddTagButtonCallback = ->
+  $('#tag-add-button').on 'click', (e) ->
+    $('#tag-names').val("#{$('#tag-names').val()} #{$('#tag-name').val()}")
+    $('#tag-name').val("")
+    displayTagLabels()
+
+setupRemoveTagIconCallback = ->
+  $('.remove-tag-icon').on 'click', (e) ->
+    currentTagNames = $('#tag-names').val()
+    exp = "(^|\\s)#{$(this).attr('id')}(?=\\s|$)"
+    newTagNames = currentTagNames.replace(new RegExp(exp, 'g'), '')
+    $('#tag-names').val("#{newTagNames}")
+    displayTagLabels()
+
+displayTagLabels = ->
+  $('#current-tags').empty()
+  $.map $('#tag-names').val().split(" "), (tag_name) ->
+    unless tag_name is ""
+      $('#current-tags').append("<span class='label label-primary tag-label'>\
+                                     <span class='glyphicon glyphicon-tag' aria-hidden='true'></span> #{tag_name} \
+                                   | <span id='#{tag_name}' class='glyphicon glyphicon-remove remove-tag-icon' aria-hidden='true'></span></span>")
+  setupRemoveTagIconCallback()
 
 displaySelectionLineRange = (str) ->
   $('#selected-range').append("#{str}")
@@ -242,7 +296,10 @@ ready = ->
   repos_list = getRepository()
   minute = getOriginalMinuteAsJSON()
   setupAutoCompleteEmoji('#minute_content')
+  setupAutoCompleteTag('#tag-name')
   setupTabCallback()
+  setupAddTagButtonCallback()
+  displayTagLabels() if $('#tag-names').val()?
 
   $('.action-item').click (event) ->
     if range = getSelectionLineRange()

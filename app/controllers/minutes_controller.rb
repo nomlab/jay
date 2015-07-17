@@ -5,6 +5,10 @@ class MinutesController < ApplicationController
   # GET /minutes.json
   def index
     @minutes = Minute.order('dtstart DESC')
+    respond_to do |format|
+      format.html {}
+      format.json { render json: @minutes, include: {author: {only: :name}} }
+    end
   end
 
   # GET /minutes/1
@@ -69,6 +73,15 @@ class MinutesController < ApplicationController
     respond_to do |format|
       format.html { redirect_to minutes_url, notice: 'Minute was successfully destroyed.' }
       format.json { head :no_content }
+    end
+  end
+
+  # for ajax search
+  def search_by_tag
+    unless tag = Tag.find_by(name: params[:tag_name])
+      render json: nil
+    else
+      render json: tag.minutes, include: {author: {only: :name}}
     end
   end
 

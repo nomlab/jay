@@ -252,6 +252,44 @@ setupRemoveTagIconCallback = ->
     $('#tag-names').val("#{newTagNames}")
     displayTagLabels()
 
+setupMinuteSearchButtonCallback = ->
+  $('#search-minutes-by-tag').on 'click', (e) ->
+    $('tbody').empty()
+    tagName = $('#tag-name').val()
+    if tagName is ""
+      $. ajax
+        async: false
+        type: "GET"
+        url: "/minutes"
+        dataType: "json"
+        success:  (minutes, status, xhr)   ->
+          unless minutes is null
+            $.map minutes, (minute) ->
+              displayMinuteRow(minute)
+    else
+      $. ajax
+        async: false
+        type: "GET"
+        url: "/minutes/search_by_tag"
+        dataType: "json"
+        data:
+          tag_name: $('#tag-name').val()
+        success:  (minutes, status, xhr)   ->
+          unless minutes is null
+            $.map minutes, (minute) ->
+              displayMinuteRow(minute)
+
+displayMinuteRow = (minute) ->
+  $('tbody').append("<tr>\
+                       <td>#{minute.title || ""}</td>\
+                       <td>#{minute.dtstart || ""}</td>\
+                       <td>#{minute.location || ""}</td>\
+                       <td>#{minute.author.name || ""}</td>\
+                       <td><a href='/minutes/#{minute.id}'>Show</a></td>\
+                       <td><a href='/minutes/#{minute.id}/edit'>Edit</a></td>\
+                       <td><a href='/minutes/#{minute.id}' data-method='delete' rel='nofollow' data-confirm='Are you sure?'>Destroy</a></td>\
+                     </tr>")
+
 displayTagLabels = ->
   $('#current-tags').empty()
   $.map $('#tag-names').val().split(" "), (tag_name) ->
@@ -299,6 +337,7 @@ ready = ->
   setupAutoCompleteTag('#tag-name')
   setupTabCallback()
   setupAddTagButtonCallback()
+  setupMinuteSearchButtonCallback()
   displayTagLabels() if $('#tag-names').val()?
 
   $('.action-item').click (event) ->

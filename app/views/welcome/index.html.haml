@@ -5,14 +5,3 @@
         - name = User.current.screen_name
         = link_to user_avatar_icon_tag(User.current, 64), "https://github.com/#{name}"
         %h2= User.current.name
-    .row
-      .panel.panel-default
-        .panel-heading Organization repositories
-        .panel-body
-        %ul.list-group
-          - User.current.repos.each do |repos|
-            %li.list-group-item
-              = link_to repos.full_name, repos.html_url
-      / /panel
-    / /row
-/ container

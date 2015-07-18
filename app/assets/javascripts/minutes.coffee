@@ -361,22 +361,49 @@ displayTagLabels = ->
                                    | <span id='#{tag_name}' class='glyphicon glyphicon-remove remove-tag-icon' aria-hidden='true'></span></span>")
   setupRemoveTagIconCallback()
 
-displaySelectionLineRange = (str) ->
-  $('#selected-range').append("#{str}")
+#
+# Set values to Issue form selected by ID
+#
+# options = {
+#   selector: CSS selector of target form like '#create-issue-modal'
+#   title: issue title (string)
+#   organization: github organization
+#   repos_candidates: Repository names to be listed in repository menu
+#   repos_all: All repository names in ORGANIZATION
+#   description: Issue description (markdown string)
+# }
+#
+setupIssueForm = (options) ->
+  id = options.selector
+  $("#{id} #title").val(options.title)
+  $("#{id} #selected-range").val(options.description)
 
-displayGithubRepository = (repos_list) ->
   str_repos = ""
-  for r in repos_list
+  for r in options.repos_candidates
     str_repos = str_repos + "<label class='label label-primary candidate-repository'>#{r}</label> "
-  $('#repositories-list').replaceWith("<p id='repositories-list'><i class='fa fa-lightbulb-o fa-fw'></i>#{str_repos}<p>")
-  $('.candidate-repository').click (event) ->
-    $('#repository').val(event.target.innerHTML)
+  $("#{id} #repositories-list").replaceWith("<p id='repositories-list'><i class='fa fa-lightbulb-o fa-fw'></i>#{str_repos}<p>")
 
-displayTitle = (title) ->
-  $('#title').val(title)
+  setupAutoCompleteRepository("#repository", options.repos_all)
+
+  $("#{id} .candidate-repository").click (event) ->
+    $("#{id} #repository").val(event.target.innerHTML)
+
+  $("#{id} #submit-button").click ->
+    param = $("#{id} #submit-form").serializeArray()
+    if param[2].value
+      issue =
+        title: param[0].value
+        body: param[1].value
+        # labels: "" # FIXME
+        # assignee: minute.screen_name # FIXME
+      newGithubIssue("#{options.organization}/#{param[2].value}", issue)
+      $('#create-issue-modal').modal("hide")
+    else
+      alert "No inputed repository"
+  return $("#{id}")
 
 ready = ->
-  repos_list = getGithubAllHomeRepositories()
+  repos_all = getGithubAllHomeRepositories()
   setupAutoCompleteEmoji('#minute_content')
   setupAutoCompleteTag('#tag-name')
   setupTabCallback()
@@ -385,30 +412,20 @@ ready = ->
   displayTagLabels() if $('#tag-names').val()?
 
   $('.action-item').click (event) ->
+    event.preventDefault()
     if range = getSelectionLineRange()
       minute = getCurrentPageAsJSON()
-      line = extractLines(minute.content, range.fst, range.lst)
-      setupAutoCompleteRepository('#repository', repos_list)
-      repos_list = findKeywords(minute.content, repos_list)
-      displayGithubRepository(repos_list)
-      displaySelectionLineRange(chopIndent(line))
-      displayTitle(removeTrailer(removeHeader(line.split("\n")[-1..][0])))
-      $('#create-issue-modal').modal("show")
+      description = chopIndent(extractLines(minute.content, range.fst, range.lst))
+      title = removeHeader(removeTrailer(description.trim().split("\n")[-1..][0]))
+      form = setupIssueForm
+        selector: '#create-issue-modal'
+        title: title
+        organization: minute.organization
+        repos_candidates: findKeywords(minute.content, repos_all)
+        repos_all: repos_all
+        description: description
+      form.modal("show")
     else
       alert "No valid range is specified."
-    event.preventDefault()
-
-  $('#submit-button').click ->
-    param = $('#submit-form').serializeArray()
-    if param[2].value
-      issue =
-        title: param[0].value
-        body: param[1].value
-        labels: "" # FIXME
-        # assignee: minute.screen_name # FIXME
-      newGithubIssue("#{minute.organization}/#{param[2].value}", issue)
-      $('#create-issue-modal').modal("hide")
-    else
-      alert "No inputed repository"
 
 $(document).ready(ready)

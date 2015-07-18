@@ -36,13 +36,15 @@ findNearestLinenum = (element, direction = -1) ->
   ele.removeAttr(name)
   return $(buddy).attr(name)
 
-
-
-# Get the markdown source code of the current page.
-#   fst: first line number
-#   lst: last line number
-# returns JSON encoded markdown source code
-getOriginalMinuteAsJSON = () ->
+# Get the JSON format of the current page.
+#
+# If the current page is /mintes/1, it will return /minutes/1.json.
+# This function is supposed to be used to get a JSON-style content of
+# currently displayed minute.
+#
+# returns JSON encoded structure.
+#
+getCurrentPageAsJSON = () ->
   res = $.ajax
     url: window.location.pathname + ".json"
     async: false
@@ -50,27 +52,20 @@ getOriginalMinuteAsJSON = () ->
   json = res.responseJSON
   return json
 
+# Convert markdown TEXT to html and update element UPDATE_ELEMENT.
+#
 renderMarkdown = (text, update_element) ->
   $.post '/minutes/preview', {text: text}, (data) ->
     $(update_element).html(data)
-
-# Stub getOriginalMinuteAsJSON for test
-getOriginalMinuteAsJSON_Stub = (fst, lst) ->
-  return {
-    title: "Minute 2015-06-10"
-    body: "# Blah\n+ fst: #{fst}\n+ lst: #{lst}\n"
-    labels: "bug"
-  }
 
 #
 # Remove Headings of list item ``+ (A) ``
 #
 removeHeader = (string) ->
   string.replace(/^ *[*+-] */, '')
-#  string.replace(/^ *[*+-]( \(.\))? */, '')
 
-# Return a regexp to match a string in the array STRINGS
-# JavaScript verion of Emacs regexp-opt
+# Return a regexp to match a string in the array STRINGS.
+# This is a JavaScript verion of Emacs regexp-opt
 # https://gist.github.com/kawanet/5540864
 #
 array_to_regexp = (strings, regexp_option) ->
@@ -84,29 +79,92 @@ array_to_regexp = (strings, regexp_option) ->
   return new RegExp(re, regexp_option)
 
 #
-# Remove trailing ``-->(...)''
+# Remove trailing ``-->(...)'' from STRING.
 #
 removeTrailer = (string) ->
   string.replace(/(．)? *--(>|&gt;)\(.*\) */, '')
 
-getIndentLevel = (string) ->
+
+# Get the minimum indent level of LINES.
+# LINES has multiple lines separated by "\n".
+#
+# For example, if LINES has these three lines:
+#
+# |    first line
+# |      second line
+# |  third line
+#
+# this function returns the minimum indent level as 2.
+# calculated from the third line.
+#
+getIndentLevel = (lines) ->
   indent = 9999
-  for line in string.split("\n")
+  for line in lines.split("\n")
     match = /^ */.exec(line)
     if match && match[0].length < indent
       indent = match[0].length
   return indent
 
-chopIndentLevel = (string, level) ->
-  return string if level == 0
+# Decrease indents of LINES by LEVEL.
+# LINES has multiple lines separated by "\n".
+#
+# For example, if you call this function with LEVEL is 2 and LINES has
+# these three lines:
+#
+# |    first line
+# |      second line
+# |  third line
+#
+# this function returns:
+#
+# |  first line
+# |    second line
+# |third line
+#
+chopIndentLevel = (lines, level) ->
+  return lines if level == 0
   space = new RegExp("^#{' '.repeat(level)}")
   result = ''
-  for line in string.split("\n")
+  for line in lines.split("\n")
     result += line.replace(space, '') + "\n"
   return result
 
-chopIndent = (string) ->
-  chopIndentLevel(string, getIndentLevel(string))
+# Decrease indents of LINES to zero.
+#
+chopIndent = (lines) ->
+  chopIndentLevel(lines, getIndentLevel(lines))
+
+# Find words listed in KEYWORDS by scanning the LINES.
+#
+# If LINES has a string enumerated in KEYWORDS the sting will
+# be counted up as a candidate.
+#
+# For example,
+#
+# LINES:
+# | nomlab/foo is great, but nomlab/bar is not.
+# | blah blah...
+#
+# KEYWORDS:
+#   ["nomlab/foo", "nomlab/bar", "nomlab/baz"]
+#
+# returns:
+#   ["nomlab/foo", "nomlab/bar"]
+#
+# FIXME: this function breaks original KEYWORDS
+#
+findKeywords = (lines, keywords) ->
+  regexp = array_to_regexp(keywords, "g")
+  repos = lines.match(regexp)
+  keywords = repos.filter((x, i, self) ->
+    self.indexOf(x) == i
+  )
+  keywords
+
+# Extract lines from line number FST to LST.
+#
+extractLines = (lines, fst, lst) ->
+    lines.split("\n")[fst-1 .. lst-1].join("\n")
 
 # Open new github issue draft
 #   repos: yoshinari-nomura/sandbox
@@ -126,12 +184,11 @@ getGithubPublicRepositories = (organization, full) ->
   repos = []
   for r in res.responseJSON
     repos.push (if full then r.full_name else r.name)
-  # alert "REPOS:" + repos.join("\n")
   return repos
 
-# Get User's Github *public* repositories in ORGANIZATION
+# Get User's Github *public* repositories in ORGANIZATION using JSONP
 # https://developer.github.com/v3/repos/#list-organization-repositories
-# JSONP should be async
+#
 getGithubPublicRepositoriesJSONP = (organization, full, callback) ->
   res = $.ajax
     url: "https://api.github.com/orgs/#{organization}/repos"
@@ -142,20 +199,25 @@ getGithubPublicRepositoriesJSONP = (organization, full, callback) ->
         repos.push (if full then r.full_name else r.name)
       callback(repos)
 
-# Guess suitable repository candidates by
-# scanning the content of MINUTE.
+# Get User's Github *ALL* repositories in user's default organization
+# /users/repositories returns a same structure with:
+# https://developer.github.com/v3/repos/#list-organization-repositories
 #
-# Candidates are scanned from user's profile
-# via GitHub API
+# FIXME: needs same interface with getGithubPublicRepositories
 #
-getGithubTargetRepository = (minute, repos_list) ->
-  regexp = array_to_regexp(repos_list, "g")
-  repos = minute.content.match(regexp)
-  repos_list = repos.filter((x, i, self) ->
-    self.indexOf(x) == i
-  )
-  # alert (if repos then repos.join("\n") else "NO match")
-  repos_list
+getGithubAllHomeRepositories = (full = false) ->
+  res = $. ajax
+    async: false
+    type: "GET"
+    url: "/users/repositories"
+    dataType: "json"
+  repos = []
+  for r in res.responseJSON
+    repos.push (if full then r.full_name else r.name)
+  return repos
+
+################################################################
+# setup and DOM manipulations
 
 setupAutoCompleteEmoji = (element) ->
   img_url = "https://raw.githubusercontent.com/Ranks/emojify.js/master/src/images/emoji"
@@ -284,7 +346,7 @@ displayMinuteRow = (minute) ->
                        <td>#{minute.title || ""}</td>\
                        <td>#{minute.dtstart || ""}</td>\
                        <td>#{minute.location || ""}</td>\
-                       <td>#{minute.author.name || ""}</td>\
+                       <td>#{minute.author?.name || ""}</td>\
                        <td><a href='/minutes/#{minute.id}'>Show</a></td>\
                        <td><a href='/minutes/#{minute.id}/edit'>Edit</a></td>\
                        <td><a href='/minutes/#{minute.id}' data-method='delete' rel='nofollow' data-confirm='Are you sure?'>Destroy</a></td>\
@@ -313,26 +375,8 @@ displayGithubRepository = (repos_list) ->
 displayTitle = (title) ->
   $('#title').val(title)
 
-getRepository = () ->
-  res = $. ajax
-    async: false
-    type: "GET"
-    url: "/users/repositories"
-    dataType: "json"
-  createRegularExpression(res)
-
-createRegularExpression = (data) ->
-  data_list = []
-  for d in data.responseJSON
-    data_list.push(d[1][1])
-  data_list
-
-getSelectionLine = (body, fst, lst) ->
-    line = body.content.split("\n")[fst-1 .. lst-1].join("\n")
-
 ready = ->
-  repos_list = getRepository()
-  minute = getOriginalMinuteAsJSON()
+  repos_list = getGithubAllHomeRepositories()
   setupAutoCompleteEmoji('#minute_content')
   setupAutoCompleteTag('#tag-name')
   setupTabCallback()
@@ -342,9 +386,10 @@ ready = ->
 
   $('.action-item').click (event) ->
     if range = getSelectionLineRange()
-      line = getSelectionLine(minute, range.fst, range.lst)
+      minute = getCurrentPageAsJSON()
+      line = extractLines(minute.content, range.fst, range.lst)
       setupAutoCompleteRepository('#repository', repos_list)
-      repos_list = getGithubTargetRepository(minute, repos_list)
+      repos_list = findKeywords(minute.content, repos_list)
       displayGithubRepository(repos_list)
       displaySelectionLineRange(chopIndent(line))
       displayTitle(removeTrailer(removeHeader(line.split("\n")[-1..][0])))

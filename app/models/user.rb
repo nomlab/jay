@@ -65,10 +65,12 @@ class User < ActiveRecord::Base
 
   # Get repository information using octokit
   # https://gist.github.com/mattboldt/7865054
-  def repos
+  def repos_octokit
     github = ::Octokit::Client.new(:access_token => User.current.access_token)
     array = github.organization_repositories(ApplicationSettings.github.organization)
   end
+
+  alias_method :repos, :repos_via_current_oauth
 
   # https://github.com/jonmagic/omniauth-github-team-member/blob/master/lib/omniauth/strategies/github_team_member.rb
   def team_member?(team_id)

@@ -424,7 +424,7 @@ setupIssueForm = (options) ->
   $("#{id} .candidate-repository").on 'click', (event) ->
     $("#{id} #repository").val(event.target.innerHTML)
 
-  $("#{id} #submit-button").on 'click', ->
+  $("#{id} #submit-button").off('click').on 'click', ->
     param = $("#{id} #submit-form").serializeArray()
     if param[2].value
       issue =

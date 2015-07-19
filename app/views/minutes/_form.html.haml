@@ -37,7 +37,7 @@
     %input#tag-names{name: "tag_names", type: "hidden", value: "#{tag_names.join(' ')}"}
     %br
     .input-group
-      %input.form-control#tag-name{type: "text"}
+      %input.form-control#tag-name{autocomplete: "off", type: "text"}
       %span.input-group-btn
         %button.btn.btn-primary#tag-add-button{type: "button"} Add tag
 

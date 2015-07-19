@@ -3,4 +3,13 @@
 // You can use Sass (SCSS) here: http://sass-lang.com/
 .tag-label{
   margin-right: 0.5em;
+  font-size: 90% !important;
+  padding-right: 2px !important;
+
+  .remove-tag-icon {
+    vertical-align: super;
+    font-size: 80%;
+    cursor: pointer;
+    margin-left: 1em;
+  }
 }

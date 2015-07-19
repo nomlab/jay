@@ -335,9 +335,8 @@ setupTagForm = (selector) ->
     tags().map (tag_name) ->
       $('#current-tags').append """
         <span class="label label-primary tag-label">
-          <span class="glyphicon glyphicon-tag" aria-hidden="true"></span> #{tag_name} |
-          <span id="#{tag_name}" class="glyphicon glyphicon-remove remove-tag-icon" aria-hidden="true"></span>
-        </span></span>
+          <span class="glyphicon glyphicon-tag" aria-hidden="true"></span> #{tag_name}
+          <span id="#{tag_name}" class="glyphicon glyphicon-remove remove-tag-icon" aria-hidden="true"></span></span>
       """
     bind_destroy_action()
 

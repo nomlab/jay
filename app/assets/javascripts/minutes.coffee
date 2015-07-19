@@ -421,10 +421,10 @@ setupIssueForm = (options) ->
 
   setupAutoCompleteRepository("#repository", options.repos_all)
 
-  $("#{id} .candidate-repository").click (event) ->
+  $("#{id} .candidate-repository").on 'click', (event) ->
     $("#{id} #repository").val(event.target.innerHTML)
 
-  $("#{id} #submit-button").click ->
+  $("#{id} #submit-button").on 'click', ->
     param = $("#{id} #submit-form").serializeArray()
     if param[2].value
       issue =
@@ -445,7 +445,7 @@ ready = ->
   setupTagForm('#tag-form')
   setupMinuteSearchButtonCallback()
 
-  $('.action-item').click (event) ->
+  $('.action-item').on 'click', (event) ->
     event.preventDefault()
     if range = getSelectionLineRange()
       minute = getCurrentPageAsJSON()

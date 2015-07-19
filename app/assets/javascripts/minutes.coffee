@@ -412,6 +412,7 @@ setupIssueForm = (options) ->
   id = options.selector
   $("#{id} #title").val(options.title)
   $("#{id} #selected-range").val(options.description)
+  $("#{id} #repository").val('')
 
   str_repos = ""
   for r in options.repos_candidates

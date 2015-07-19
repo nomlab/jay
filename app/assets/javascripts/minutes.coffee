@@ -351,6 +351,9 @@ setupTagForm = (selector) ->
     $('#tag-name').val('') # clear input field
     redisplay()
 
+  $('#tag-name').on 'keypress', (e) ->
+    e.preventDefault() if e.keyCode == 13 # Enter
+
   redisplay() if $('#tag-names').val()?
   setupAutoCompleteTag('#tag-name')
 

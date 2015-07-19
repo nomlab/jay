@@ -338,12 +338,10 @@ setupTagForm = (selector) ->
           <span class="glyphicon glyphicon-tag" aria-hidden="true"></span> #{tag_name}
           <span id="#{tag_name}" class="glyphicon glyphicon-remove remove-tag-icon" aria-hidden="true"></span></span>
       """
-    bind_destroy_action()
 
-  bind_destroy_action = ->
-    $('.remove-tag-icon').on 'click', (e) ->
-      remove_tag($(this).attr('id'))
-      redisplay()
+  $('#current-tags').on 'click', '.remove-tag-icon', (e) ->
+    remove_tag($(this).attr('id'))
+    redisplay()
 
   $('#tag-add-button').on 'click', (e) ->
     add_tags(str_to_ary($('#tag-name').val()))

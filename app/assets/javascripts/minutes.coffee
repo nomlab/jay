@@ -300,19 +300,60 @@ setupTabCallback = ->
     if $(cur).attr('id') == "preview"
       renderMarkdown($(old).children('textarea').val(), $(cur))
 
-setupAddTagButtonCallback = ->
-  $('#tag-add-button').on 'click', (e) ->
-    $('#tag-names').val("#{$('#tag-names').val()} #{$('#tag-name').val()}")
-    $('#tag-name').val("")
-    displayTagLabels()
+# setup Tag manipulation form
+#
+# #current-tags .. display current tag labes (div)
+# #tag-names ... tags separated by space (hidden text field)
+# #tag-name .. current input field
+# #add-tag-button ... add button
+#
+setupTagForm = (selector) ->
+  str_to_ary = (str) ->
+    str = str.trim()
+    return [] if str == ''
+    return str.split(/\s+/)
 
-setupRemoveTagIconCallback = ->
-  $('.remove-tag-icon').on 'click', (e) ->
-    currentTagNames = $('#tag-names').val()
-    exp = "(^|\\s)#{$(this).attr('id')}(?=\\s|$)"
-    newTagNames = currentTagNames.replace(new RegExp(exp, 'g'), '')
-    $('#tag-names').val("#{newTagNames}")
-    displayTagLabels()
+  tags = ->
+    str_to_ary($('#tag-names').val())
+
+  set_tags = (tag_array) ->
+    $('#tag-names').val(tag_array.join(' '))
+    return tags()
+
+  add_tags = (tag_array) ->
+    ary = tags()
+    tag_array.map (tag) ->
+      ary.push(tag) if !(tag in ary)
+    set_tags(ary)
+
+  remove_tag = (tag) ->
+    ary = tags().filter (x) -> x != tag.trim()
+    set_tags(ary)
+
+  redisplay = ->
+    $('#current-tags').empty()
+    tags().map (tag_name) ->
+      $('#current-tags').append """
+        <span class="label label-primary tag-label">
+          <span class="glyphicon glyphicon-tag" aria-hidden="true"></span> #{tag_name} |
+          <span id="#{tag_name}" class="glyphicon glyphicon-remove remove-tag-icon" aria-hidden="true"></span>
+        </span></span>
+      """
+    bind_destroy_action()
+
+  bind_destroy_action = ->
+    $('.remove-tag-icon').on 'click', (e) ->
+      remove_tag($(this).attr('id'))
+      redisplay()
+
+  $('#tag-add-button').on 'click', (e) ->
+    add_tags(str_to_ary($('#tag-name').val()))
+    $('#tag-name').val('') # clear input field
+    redisplay()
+
+  redisplay() if $('#tag-names').val()?
+  setupAutoCompleteTag('#tag-name')
+
 
 setupMinuteSearchButtonCallback = ->
   $('#search-minutes-by-tag').on 'click', (e) ->
@@ -352,14 +393,6 @@ displayMinuteRow = (minute) ->
                        <td><a href='/minutes/#{minute.id}' data-method='delete' rel='nofollow' data-confirm='Are you sure?'>Destroy</a></td>\
                      </tr>")
 
-displayTagLabels = ->
-  $('#current-tags').empty()
-  $.map $('#tag-names').val().split(" "), (tag_name) ->
-    unless tag_name is ""
-      $('#current-tags').append("<span class='label label-primary tag-label'>\
-                                     <span class='glyphicon glyphicon-tag' aria-hidden='true'></span> #{tag_name} \
-                                   | <span id='#{tag_name}' class='glyphicon glyphicon-remove remove-tag-icon' aria-hidden='true'></span></span>")
-  setupRemoveTagIconCallback()
 
 #
 # Set values to Issue form selected by ID
@@ -405,11 +438,9 @@ setupIssueForm = (options) ->
 ready = ->
   repos_all = getGithubAllHomeRepositories()
   setupAutoCompleteEmoji('#minute_content')
-  setupAutoCompleteTag('#tag-name')
   setupTabCallback()
-  setupAddTagButtonCallback()
+  setupTagForm('#tag-form')
   setupMinuteSearchButtonCallback()
-  displayTagLabels() if $('#tag-names').val()?
 
   $('.action-item').click (event) ->
     event.preventDefault()

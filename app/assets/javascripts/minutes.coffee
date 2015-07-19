@@ -435,7 +435,7 @@ setupIssueForm = (options) ->
       newGithubIssue("#{options.organization}/#{param[2].value}", issue)
       $('#create-issue-modal').modal("hide")
     else
-      alert "No inputed repository"
+      alert "No repository specified"
   return $("#{id}")
 
 ready = ->

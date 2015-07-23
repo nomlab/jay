@@ -15,3 +15,4 @@
 //= require_tree .
 //= require bootstrap-sprockets
 //= require jquery-textcomplete
+//= require websocket_rails/main

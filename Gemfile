@@ -89,3 +89,4 @@ gem 'haml-rails'
 # for extension font
 gem 'font-awesome-sass'
 
+gem "websocket-rails"

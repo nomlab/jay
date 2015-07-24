@@ -461,9 +461,8 @@ ready = ->
       alert "No valid range is specified."
 
   # Receiver
-  receiver = new WebSocketRails('localhost:3000/websocket')
+  receiver = new WebSocketRails(location.host + '/websocket')
   receiver.bind 'convert_markdown', (data) ->
-    $("#preview").html(data)
-
+    $("#realtime-preview").html(data)
 
 $(document).ready(ready)

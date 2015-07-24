@@ -76,6 +76,9 @@ class MinutesController < ApplicationController
     end
   end
 
+  def realtime_preview
+  end
+
   # for ajax search
   def search_by_tag
     unless tag = Tag.find_by(name: params[:tag_name])

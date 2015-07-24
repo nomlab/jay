@@ -7,6 +7,7 @@ Rails.application.routes.draw do
   get "/sessions/logout", to: "sessions#logout"
 
   post "/minutes/preview", to: "minutes#preview"
+  get "/minutes/realtime_preview", to: "minutes#realtime_preview"
   get "/minutes/search_by_tag", to: "minutes#search_by_tag"
 
   resources :minutes

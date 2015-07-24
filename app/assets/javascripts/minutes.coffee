@@ -465,10 +465,5 @@ ready = ->
   receiver.bind 'convert_markdown', (data) ->
     $("#preview").html(data)
 
-  # Sender
-  sender = new WebSocketRails('localhost:3000/websocket')
-  $('#write textarea').on 'input', (event) ->
-    content = $('#write textarea').val()
-    sender.trigger 'convert_markdown', content
 
 $(document).ready(ready)

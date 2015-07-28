@@ -155,7 +155,7 @@ chopIndent = (lines) ->
 #
 findKeywords = (lines, keywords) ->
   regexp = array_to_regexp(keywords, "g")
-  repos = lines.match(regexp)
+  repos = lines.match(regexp) || []
   keywords = repos.filter((x, i, self) ->
     self.indexOf(x) == i
   )

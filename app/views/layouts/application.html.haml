@@ -14,8 +14,8 @@
       .container-fluid
         / navbar header
         .navbar-header
-          %button.navbar-toggle.collapsed.pull-left{"data-target" => "#navbar", "data-toggle" => "collapse", :type => "button"}
-            %span.icon-bar
+          %button.navbar-toggle.collapsed.pull-left{"data-target" => "#navbar", "data-toggle" => "collapse", "aria-expanded" => "false", :type => "button"}
+            %span.sr-only Toggle nav
             %span.icon-bar
             %span.icon-bar
             %span.icon-bar
@@ -27,14 +27,15 @@
           %ul.nav.navbar-nav.navbar-left
             %li= link_to 'Minutes', minutes_path
             %li= link_to 'Tags', tags_path
-            %li= link_to((User.current.name rescue ''), root_path)
+            - if User.current
+              %li= link_to((User.current.name rescue ''), root_path)
           / right navbar
           %ul.nav.navbar-nav.navbar-right
             %li
-              - if session[:user_id]
-                = link_to glyphicon('log-out'), {:controller => 'sessions', :action => 'logout'}, :class => 'navbar-link'
+              - if User.current
+                = link_to glyphicon('log-out', 'logout'), {:controller => 'sessions', :action => 'logout'}, :class => 'navbar-link'
               - else
-                = link_to glyphicon('log-in'), '/auth/github', :class => 'navbar-link'
+                = link_to glyphicon('log-in', 'login'), '/auth/github', :class => 'navbar-link'
         / navbar links for collapse toggling
       / container-fluid
     / navbar

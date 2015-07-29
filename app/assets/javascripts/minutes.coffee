@@ -212,7 +212,7 @@ getGithubAllHomeRepositories = (full = false) ->
     url: "/users/repositories"
     dataType: "json"
   repos = []
-  for r in res.responseJSON
+  for r in (res.responseJSON || [])
     repos.push (if full then r.full_name else r.name)
   return repos
 

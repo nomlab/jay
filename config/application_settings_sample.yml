@@ -13,6 +13,7 @@ default: &default
       ## It can be checked by:
       ##   curl -u [your-github-account] https://api.github.com/orgs/:org/teams
       allowed_team_id: xxxxx
+  post_url: http://XXXXXX
 
 development:
   <<: *default

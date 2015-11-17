@@ -506,8 +506,9 @@ class JayAddLink < HTML::Pipeline::TextFilter
     end
 
     @text = @text.map do |line|
-      line.gsub(/([A-Z_a-z\d]+\/)?#\d+/) do |match|
-        "[#{match}](){: .action-item}"
+      line.gsub(%r{(?:([\w.-]+)/)??(?:([\w.-]+)/)?#(\d+)}i) do |match|
+        url = "https://github.com/#{$1 || context[:organization]}/#{$2}/issues/#{$3}"
+        "[#{match}](#{url}){: .action-item-issue}"
       end
     end.join("\n")
   end

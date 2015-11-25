@@ -1,5 +1,6 @@
 class MinutesController < ApplicationController
   before_action :set_minute, only: [:show, :edit, :update, :destroy]
+  around_action :webhook_action
 
   # GET /minutes
   # GET /minutes.json
@@ -100,6 +101,23 @@ class MinutesController < ApplicationController
       tag_names.split.map do |tag_name|
         tag = Tag.find_by(name: tag_name)
         tag ? tag : Tag.create(name: tag_name)
+      end
+    end
+
+    def webhook_action
+      settings = ApplicationSettings.webhook.select do |setting|
+        setting["events"].include?(action_name)
+      end
+      webhooks = settings.map {|setting| Webhook.new(setting)}
+
+      yield
+
+      webhooks.each do |webhook|
+        logger.info "Posting minutes to #{webhook.uri}"
+
+        res = webhook.post(@minute)
+
+        logger.info "  Response: #{res.code} #{res.message}"
       end
     end
 end

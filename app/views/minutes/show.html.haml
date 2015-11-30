@@ -1,6 +1,6 @@
 - @minute.tags.each do |tag|
   = tag_label(tag)
-= render partial: 'content', locals: {text: @minute.content, organization: @minute.organization}
+= render partial: 'content', locals: {text: @minute.cooked_content, organization: @minute.organization}
 = link_to 'Edit', edit_minute_path(@minute)
 |
 = link_to 'Back', minutes_path

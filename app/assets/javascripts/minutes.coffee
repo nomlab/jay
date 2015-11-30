@@ -1,3 +1,13 @@
+#
+# Get URL params as Object
+#
+getUrlParams = ->
+  params = {}
+  for param in window.location.search.substr(1).split('&')
+    [key, val] = param.split('=')
+    params[key] = decodeURIComponent(val)
+  return params
+
 # Get current region selected by mouse.
 # returns {fst: FIRST_ELEMENT, lst: LAST_ELEMENT}
 getSelectionRange = ->
@@ -35,6 +45,28 @@ findNearestLinenum = (element, direction = -1) ->
   buddy = $(sel)[index + direction]
   ele.removeAttr(name)
   return $(buddy).attr(name)
+
+
+# Scroll to ELEMENT at the center of window
+#
+scrollToCenter = (element) ->
+  ele = $(element)
+  eleH = ele.height()
+  winH = $(window).height()
+
+  offset = ele.offset().top
+  offset = offset - ((winH / 2) - (eleH / 2)) if eleH < winH
+
+  $('html, body').animate({scrollTop: offset}, 600)
+
+#
+# Scroll to AI at the center of window and
+# add class="marked" to highlight
+#
+markAndScrollToActionItem = (ai) ->
+  ele = $("[data-action-item='#{ai}']")
+  ele.parent().addClass('marked')
+  scrollToCenter(ele)
 
 # Get the JSON format of the current page.
 #
@@ -442,6 +474,8 @@ ready = ->
   setupTabCallback()
   setupTagForm('#tag-form')
   setupMinuteSearchButtonCallback()
+  if ai = getUrlParams().ai
+    markAndScrollToActionItem(ai)
 
   $('.action-item').on 'click', (event) ->
     event.preventDefault()
@@ -449,13 +483,15 @@ ready = ->
       minute = getCurrentPageAsJSON()
       description = chopIndent(extractLines(minute.content, range.fst, range.lst))
       title = removeHeader(removeTrailer(description.trim().split("\n")[-1..][0]))
+      ai_num = $(this).attr("data-action-item")
+      url = "#{this.href.split('?')[0]}?ai=#{ai_num}"
       form = setupIssueForm
         selector: '#create-issue-modal'
         title: title
         organization: minute.organization
         repos_candidates: findKeywords(minute.content, repos_all)
         repos_all: repos_all
-        description: description
+        description: "Created from [AI#{ai_num}](#{url}) of minute #{minute.id}.\n#{description}"
       form.modal("show")
     else
       alert "No valid range is specified."

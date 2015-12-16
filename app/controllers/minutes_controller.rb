@@ -18,7 +18,7 @@ class MinutesController < ApplicationController
     respond_to do |format|
       format.html {}
       format.json {}
-      format.text {render plain: JayFlavoredMarkdownToPlainTextConverter.new(@minute.content).content}
+      format.text {render plain: JayFlavoredMarkdownToPlainTextConverter.new(@minute.cooked_content).content}
     end
   end
 

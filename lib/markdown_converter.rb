@@ -499,16 +499,29 @@ class JayAddLink < HTML::Pipeline::TextFilter
   def call
     lines = @text.split("\n")
 
+    # Replace GitHub issue notation into solid markdown link.
+    # Example:
+    #   nomlab/jay/#10
+    # becomes:
+    #   [nomlab/jay/#10](https://github.com/nomlab/jay/issues/10){:.github-issue}
+    #
+    # NOTE: {:.foo} is a kramdown dialect to add class="foo" to HTML.
     @text = lines.map do |line|
-      line.gsub(/-->\((.+?)\)/) do |macth|
-        "-->([#{$1}](){: .action-item})"
+      line.gsub(%r{(?:([\w.-]+)/)??(?:([\w.-]+)/)?#(\d+)}i) do |match|
+        url = "https://github.com/#{$1 || context[:organization]}/#{$2}/issues/#{$3}"
+        "[#{match}](#{url}){:.github-issue}"
       end
     end
 
+    # Replace action-item notation into solid markdown link.
+    # Example:
+    #   -->(name !:0001) becomes [-->(name !:0001)](){:data-action-item="0001"}
+    #
+    # NOTE: {:attr=val} is a kramdown dialect to add attribute to DOM element.
     @text = @text.map do |line|
-      line.gsub(%r{(?:([\w.-]+)/)??(?:([\w.-]+)/)?#(\d+)}i) do |match|
-        url = "https://github.com/#{$1 || context[:organization]}/#{$2}/issues/#{$3}"
-        "[#{match}](#{url}){: .action-item-issue}"
+      line.gsub(/-->\((.+?)!:([0-9]{4})\)/) do |macth|
+        assignee, action = $1.strip, $2.strip
+        "[-->(#{assignee} !:#{action})](){:.action-item}{:data-action-item=\"#{action}\"}"
       end
     end.join("\n")
   end

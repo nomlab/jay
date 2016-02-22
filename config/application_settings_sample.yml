@@ -14,12 +14,14 @@ default: &default
       ##   curl -u [your-github-account] https://api.github.com/orgs/:org/teams
       allowed_team_id: xxxxx
   webhook:
-    - url: http://XXXXX
-      content-type: application/json
-      events:
-        - create
-        - update
-        - destroy
+    clients:
+      - url: https://example.com
+        content-type: application/json
+        events:
+          - create
+          - update
+          - destroy
+
 development:
   <<: *default
 

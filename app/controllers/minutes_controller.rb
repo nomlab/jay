@@ -105,7 +105,7 @@ class MinutesController < ApplicationController
     end
 
     def webhook_action
-      settings = ApplicationSettings.webhook.select do |setting|
+      settings = ApplicationSettings.webhook.clients.select do |setting|
         setting["events"].include?(action_name)
       end
       webhooks = settings.map {|setting| Webhook.new(setting)}

@@ -45,7 +45,13 @@ class ApplicationController < ActionController::Base
 
         res = webhook.post(@payload)
 
-        logger.info "  Response: #{res.code} #{res.message}"
+        unless res
+          msg = "Failed to connect to #{webhook.uri}: Connection refused"
+          flash[:error] = msg
+          logger.info ("  " + msg)
+        else
+          logger.info "  Response: #{res.code} #{res.message}"
+        end
       end
     end
   end

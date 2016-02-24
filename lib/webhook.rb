@@ -9,10 +9,15 @@ class Webhook
     @content_type = settings["content-type"]
     @events = settings["events"]
   end
+  attr_reader :uri
 
   def post(content_hash)
     http = Net::HTTP.new(@uri.host, @uri.port)
-    http.request(generate_request(content_hash))
+    begin
+      http.request(generate_request(content_hash))
+    rescue
+      return nil
+    end
   end
 
   private

@@ -35,15 +35,22 @@ class ApplicationController < ActionController::Base
     end
     webhooks = settings.map {|setting| Webhook.new(setting)}
 
-    @payload = nil
+    @document = nil
 
     yield
 
-    if @payload
+    if @document
       webhooks.each do |webhook|
         logger.info "Posting minutes to #{webhook.uri}"
 
-        res = webhook.post(@payload)
+        payload = @document.attributes
+        payload.merge!({"tags"=>[], "name"=>nil})
+        @document.tags.each do |tag|
+          payload["tags"] << tag.name
+        end
+        payload["name"] = @document.author.screen_name
+
+        res = webhook.post(payload)
 
         unless res
           msg = "Failed to connect to #{webhook.uri}: Connection refused"

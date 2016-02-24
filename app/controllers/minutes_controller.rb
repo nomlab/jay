@@ -45,7 +45,7 @@ class MinutesController < ApplicationController
         format.json { render json: @minute.errors, status: :unprocessable_entity }
       end
     end
-    @payload = @minute
+    @document = @minute
   end
 
   # PATCH/PUT /minutes/1
@@ -61,7 +61,7 @@ class MinutesController < ApplicationController
         format.json { render json: @minute.errors, status: :unprocessable_entity }
       end
     end
-    @payload = @minute
+    @document = @minute
   end
 
   def preview

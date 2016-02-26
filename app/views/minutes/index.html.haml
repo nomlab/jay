@@ -10,16 +10,15 @@
       %th Date
       %th Location
       %th Author
-      %th{:colspan => "3"}
+      %th{ colspan: '2' }
   %tbody
     - @minutes.each do |minute|
       %tr
-        %td= minute.title
+        %td= link_to minute.title, minute
         %td= minute.dtstart.strftime("%Y-%m-%d") rescue nil
         %td= minute.location
         %td= minute.author && minute.author.name
-        %td= link_to 'Show', minute
-        %td= link_to 'Edit', edit_minute_path(minute)
-        %td= link_to 'Destroy', minute, method: :delete, data: { confirm: 'Are you sure?' }
+        %td= link_to icon('pencil'), edit_minute_path(minute)
+        %td= link_to icon('trash'), minute, method: :delete, data: { confirm: 'Are you sure?' }
 %br/
 = new_content :minute

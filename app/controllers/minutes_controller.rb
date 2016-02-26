@@ -1,5 +1,5 @@
 class MinutesController < ApplicationController
-  before_action :set_minute, only: [:show, :edit, :update, :destroy]
+  before_action :set_minute, only: [:show, :edit, :update, :destroy, :reuse]
 
   # GET /minutes
   # GET /minutes.json
@@ -76,6 +76,10 @@ class MinutesController < ApplicationController
       format.html { redirect_to minutes_url, notice: 'Minute was successfully destroyed.' }
       format.json { head :no_content }
     end
+  end
+
+  def reuse
+    @minute = @minute.dup
   end
 
   # for ajax search

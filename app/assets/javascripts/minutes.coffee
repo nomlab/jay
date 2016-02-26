@@ -423,6 +423,7 @@ displayMinuteRow = (minute) ->
                        <td><a href='/minutes/#{minute.id}'>Show</a></td>\
                        <td><a href='/minutes/#{minute.id}/edit'>Edit</a></td>\
                        <td><a href='/minutes/#{minute.id}' data-method='delete' rel='nofollow' data-confirm='Are you sure?'>Destroy</a></td>\
+                       <td><a href='/minutes/#{minute.id}/reuse'><i class='fa fa-repeat'></i></a></td>\
                      </tr>")
 
 

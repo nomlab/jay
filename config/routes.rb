@@ -9,7 +9,11 @@ Rails.application.routes.draw do
   post "/minutes/preview", to: "minutes#preview"
   get "/minutes/search_by_tag", to: "minutes#search_by_tag"
 
-  resources :minutes
+  resources :minutes do
+    member do
+      get 'reuse'
+    end
+  end
  # resources :users
 
   # The priority is based upon order of creation: first created -> highest priority.

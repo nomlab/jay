@@ -63,13 +63,61 @@
       $ vim config/secrets.yml # -> Replace all <SECRETKEY> with the string outputted
       #+END_SRC
 
-   3) Setup OAuth and webhook
+   3) Initialize application settings from sample
       #+BEGIN_SRC sh
       $ cp config/application_settings_sample.yml config/application_settings.yml
-      $ vim config/application_settings.yml # -> Input your toggl token
       #+END_SRC
 
-   4) Setup DB
+   4) Set your github organization
+      #+BEGIN_SRC sh
+      $ vim config/application_settings.yml
+      # Set as the following if your organization name is foobarbuz:
+      # default: &default
+      #   github:
+      #     organization: foobarbuz
+      #+END_SRC
+
+   5) Setup GitHub OAuth
+      1) Register a new OAuth application
+         + Authorization callback URL :: http://example.com/auth/github/callback
+      2) Set client id, client secret, allowed team id
+         #+BEGIN_SRC sh
+         $ vim config/application_settings.yml
+         # Set as the following:
+         # default: &default
+         #   oauth:
+         #     github:
+         #       client_id: foo
+         #       client_secret: bar
+         #       ## allowed_team_id is a github team id adllowed to login.
+         #       ## It can be checked by:
+         #       ##   curl -u [your-github-account] https://api.github.com/orgs/:org/teams
+         #       allowed_team_id: buz
+         #+END_SRC
+
+   6) Setup incoming webhook
+      + GitHub
+        1) Generate token
+           #+BEGIN_SRC sh
+           $ bundle exec rake secret # -> You will see: foobarbuz... Copy the string.
+           #+END_SRC
+
+        2) Add webhook to your repository
+           + Payload URL :: http://example.com/incoming_webhook/github
+           + Secret :: foobarbuz...
+           + Which events would you like to trigger this webhook? :: Let me select individual events. -> Issues
+
+        3) Set strategy and token
+           #+BEGIN_SRC sh
+           $ vim config/application_settings.yml
+           # Set as the following:
+           # default: &default
+           #  incoming_webhooks:
+           #    - strategy: github
+           #      token: foobarbuz
+           #+END_SRC
+
+   8) Setup DB
       #+BEGIN_SRC sh
       $ bundle exec rake db:migrate
       $ bundle exec rake db:migrate RAILS_ENV=production

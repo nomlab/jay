@@ -17,7 +17,8 @@ class Minute < ActiveRecord::Base
 
         issue = ActionItem.find_by_id(action.to_i).try(:github_issue)
 
-        "-->(#{assignee} #{issue || '!:' + action})"
+        issue ? "-->(#{assignee} #{issue}{:data-action-item=\"#{action}\"})" :
+          "-->(#{assignee} !:#{action})"
       end
     end.join("\n")
   end

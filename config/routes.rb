@@ -24,6 +24,11 @@ Rails.application.routes.draw do
       get 'repositories'
     end
   end
+
+  namespace :incoming_webhook do
+    post 'github'
+  end
+
   # Example of regular route:
   #   get 'products/:id' => 'catalog#view'
 

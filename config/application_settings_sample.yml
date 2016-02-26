@@ -20,6 +20,10 @@ default: &default
         - create
         - update
         - destroy
+  incoming_webhooks:
+    - strategy: github
+      token: foobarbuz
+
 development:
   <<: *default
 

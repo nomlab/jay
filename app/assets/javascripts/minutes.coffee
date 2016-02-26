@@ -416,14 +416,12 @@ setupMinuteSearchButtonCallback = ->
 
 displayMinuteRow = (minute) ->
   $('tbody').append("<tr>\
-                       <td>#{minute.title || ""}</td>\
+                       <td><a href='/minutes/#{minute.id}'>#{minute.title || ""}</a></td>\
                        <td>#{minute.dtstart || ""}</td>\
                        <td>#{minute.location || ""}</td>\
                        <td>#{minute.author?.name || ""}</td>\
-                       <td><a href='/minutes/#{minute.id}'>Show</a></td>\
-                       <td><a href='/minutes/#{minute.id}/edit'>Edit</a></td>\
-                       <td><a href='/minutes/#{minute.id}' data-method='delete' rel='nofollow' data-confirm='Are you sure?'>Destroy</a></td>\
-                       <td><a href='/minutes/#{minute.id}/reuse'><i class='fa fa-repeat'></i></a></td>\
+                       <td><a href='/minutes/#{minute.id}/edit'><i class='fa fa-pencil'></i></a></td>\
+                       <td><a href='/minutes/#{minute.id}' data-method='delete' rel='nofollow' data-confirm='Are you sure?'><i class='fa fa-trash'></i></a></td>\
                      </tr>")
 
 

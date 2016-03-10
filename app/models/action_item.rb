@@ -1,5 +1,5 @@
 class ActionItem < ActiveRecord::Base
-  before_save :set_uid
+  after_create :set_uid
 
   def uid
     "%04d" % self.id
@@ -8,6 +8,6 @@ class ActionItem < ActiveRecord::Base
   private
 
   def set_uid
-    self.uid = uid
+    self.update(uid: uid)
   end
 end

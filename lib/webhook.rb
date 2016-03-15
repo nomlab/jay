@@ -13,11 +13,7 @@ class Webhook
 
   def post(content_hash)
     http = Net::HTTP.new(@uri.host, @uri.port)
-    begin
-      http.request(generate_request(content_hash))
-    rescue
-      return nil
-    end
+    http.request(generate_request(content_hash))
   end
 
   private

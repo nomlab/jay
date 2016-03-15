@@ -50,14 +50,12 @@ class ApplicationController < ActionController::Base
         end
         payload["name"] = @document.author.screen_name
 
-        res = webhook.post(payload)
-
-        unless res
-          msg = "Failed to connect to #{webhook.uri}: Connection refused"
-          flash[:error] = msg
-          logger.info ("  " + msg)
-        else
+        begin
+          res = webhook.post(payload)
           logger.info "  Response: #{res.code} #{res.message}"
+        rescue => e
+          flash[:error] = e.message
+          logger.info ("  " + e.message)
         end
       end
     end

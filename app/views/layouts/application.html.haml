@@ -44,12 +44,7 @@
       / flash
       .row
         .col-xs-12
-          - conv = {:notice => :success, :error => :danger}
-          - [:notice, :error].each do |typ|
-            - unless flash[typ].blank?
-              %div{:class => "alert alert-#{conv[typ]}", :role => "alert"}
-                = flash[typ]
-                - flash.discard(typ)
+          - flash_messages
         / flash col
       / flash row
       .row

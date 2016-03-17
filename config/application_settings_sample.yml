@@ -13,9 +13,9 @@ default: &default
       ## It can be checked by:
       ##   curl -u [your-github-account] https://api.github.com/orgs/:org/teams
       allowed_team_id: xxxxx
-  webhook:
+  outgoing_webhooks:
     - url: http://XXXXX
-      content-type: application/json
+      content_type: application/json
       events:
         - create
         - update

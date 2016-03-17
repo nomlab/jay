@@ -1,15 +1,14 @@
 require 'net/http'
 require 'uri'
 
-class Webhook
+class OutgoingWebhook
   attr_reader :uri
 
   def initialize(settings)
     @uri = URI.parse(settings["url"])
-    @content_type = settings["content-type"]
+    @content_type = settings["content_type"]
     @events = settings["events"]
   end
-  attr_reader :uri
 
   def post(content_hash)
     http = Net::HTTP.new(@uri.host, @uri.port)

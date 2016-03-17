@@ -30,10 +30,10 @@ class ApplicationController < ActionController::Base
   end
 
   def webhook_action
-    settings = ApplicationSettings.webhook.select do |setting|
+    settings = ApplicationSettings.outgoing_webhooks.select do |setting|
       setting["events"].include?(action_name)
     end
-    webhooks = settings.map {|setting| Webhook.new(setting)}
+    webhooks = settings.map {|setting| OutgoingWebhook.new(setting)}
 
     @document = nil
 

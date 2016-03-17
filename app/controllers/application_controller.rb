@@ -4,7 +4,7 @@ class ApplicationController < ActionController::Base
   protect_from_forgery with: :exception
   prepend_before_filter :login_state_setup
   before_filter :authenticate
-  around_action :webhook_action
+  after_action :outgoing_webhook_action
 
   private
   def login_state_setup
@@ -29,35 +29,22 @@ class ApplicationController < ActionController::Base
     return false
   end
 
-  def webhook_action
-    settings = ApplicationSettings.webhook.select do |setting|
+  def outgoing_webhook_action
+    settings = ApplicationSettings.outgoing_webhooks.select do |setting|
       setting["events"].include?(action_name)
     end
-    webhooks = settings.map {|setting| Webhook.new(setting)}
+    webhooks = settings.map {|setting| OutgoingWebhook.new(setting)}
 
-    @document = nil
-
-    yield
-
-    if @document
+    if @payload
       webhooks.each do |webhook|
         logger.info "Posting minutes to #{webhook.uri}"
 
-        payload = @document.attributes
-        payload.merge!({"tags"=>[], "name"=>nil})
-        @document.tags.each do |tag|
-          payload["tags"] << tag.name
-        end
-        payload["name"] = @document.author.screen_name
-
-        res = webhook.post(payload)
-
-        unless res
-          msg = "Failed to connect to #{webhook.uri}: Connection refused"
-          flash[:error] = msg
-          logger.info ("  " + msg)
-        else
+        begin
+          res = webhook.post(@payload)
           logger.info "  Response: #{res.code} #{res.message}"
+        rescue => e
+          flash[:error] = e.message
+          logger.info ("  " + e.message)
         end
       end
     end

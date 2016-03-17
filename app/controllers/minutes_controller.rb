@@ -45,7 +45,7 @@ class MinutesController < ApplicationController
         format.json { render json: @minute.errors, status: :unprocessable_entity }
       end
     end
-    @document = @minute
+    @payload = pack_payload(@minute)
   end
 
   # PATCH/PUT /minutes/1
@@ -61,7 +61,7 @@ class MinutesController < ApplicationController
         format.json { render json: @minute.errors, status: :unprocessable_entity }
       end
     end
-    @document = @minute
+    @payload = pack_payload(@minute)
   end
 
   def preview
@@ -106,6 +106,16 @@ class MinutesController < ApplicationController
       tag_names.split.map do |tag_name|
         tag = Tag.find_by(name: tag_name)
         tag ? tag : Tag.create(name: tag_name)
+        end
+    end
+
+    def pack_payload(obj)
+      payload = obj.attributes
+      payload.merge!({"tags"=>[], "name"=>nil})
+      obj.tags.each do |tag|
+        payload["tags"] << tag.name
       end
+      payload["name"] = obj.author.screen_name
+      payload
     end
 end

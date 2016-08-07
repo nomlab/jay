@@ -49,6 +49,10 @@ class LeveledCounter
     new {|c| c << init_values[level + 1]}
   end
 
+  def previous_level
+    new {|c| c.pop}
+  end
+
   def reset
     new {|c| c[level] = init_values[level]}
   end
@@ -223,6 +227,108 @@ class MarkdownEnumerator
 end
 
 ################################################################
+## Kramdown parser with Jay hack
+
+module Kramdown
+  module Parser
+    class JayKramdown < GFM
+
+      JAY_LIST_START_UL = /^(#{OPT_SPACE}[*])([\t| ].*?\n)/
+      JAY_LIST_START_OL = /^(#{OPT_SPACE}(?:\d+\.|[+-]))([\t| ].*?\n)/
+
+      def initialize(source, options)
+        super
+        @span_parsers.unshift(:label_tags)
+        @span_parsers.unshift(:ref_tags)
+      end
+
+      def parse
+        super
+        @root = add_numbers_to_tree(@root)
+      end
+
+      # Override element type:
+      # Original Kramdown parser recognizes '+' and '-' as UL.
+      # However, Jay takes them as OL.
+      def new_block_el(*args)
+        if args[0] == :ul && @src.check(JAY_LIST_START_OL)
+          args[0] = :ol
+          super(*args)
+        else
+          super(*args)
+        end
+      end
+
+      private
+
+      LABEL_TAGS_START = /<<([^<>]+)>>/
+      def parse_label_tags
+        @src.pos += @src.matched_size
+        @tree.children << Element.new(:label, @src[1])
+      end
+      define_parser(:label_tags, LABEL_TAGS_START, '<<')
+
+      REF_TAGS_START = /\[\[(.*?)\]\]/
+      def parse_ref_tags
+        @src.pos += @src.matched_size
+        @tree.children << Element.new(:ref, @src[1])
+      end
+      define_parser(:ref_tags, REF_TAGS_START, '\[\[')
+
+      def enter_ol(el)
+        if @label_counter
+          @label_counter = @label_counter.next_level
+        else
+          @label_counter = LeveledCounter.create(:item)
+        end
+      end
+
+      def exit_ol(el)
+        @label_counter = @label_counter.previous_level
+      end
+
+      def visit_ol_li(el, first = false)
+        @label_counter = @label_counter.next unless first
+        el.value = @label_counter
+
+        # XXX: Inject text bullet (A) next to the LI tag.
+        #      This code should be in Converter#convert_li
+        label = Element.new(:text, "(#{@label_counter.mark}) ")
+        if el.children.empty? || Element.category(el.children.first) != :block
+          el.children.unshift(label)
+        else
+          el.children.first.children.unshift(label)
+        end
+      end
+
+      def visit_ol(el)
+        enter_ol(el)
+        first = true
+        el.children.each do |child|
+          if child.type == :li
+            visit_ol_li(child, first)
+            first = false
+          end
+          add_numbers_to_tree(child)
+        end
+        exit_ol(el)
+      end
+
+      def add_numbers_to_tree(el)
+        if el.type == :ol
+          visit_ol(el)
+        else
+          el.children.each do |child|
+            add_numbers_to_tree(child)
+          end
+        end
+        return el
+      end
+    end
+  end
+end
+
+################################################################
 ## Kramdown to HTML converter with additions
 
 module Kramdown
@@ -235,10 +341,71 @@ module Kramdown
 
       def initialize(root, options)
         super
+        @xref_table = {}
         @root = options_to_attributes(@root, :location, "data-linenum")
+        # @root = add_numbers_to_li_text(@root)
+        @root = make_xref(@root)
+        # debug_dump_tree(@root)
+        @root
       end
 
       private
+
+      def debug_dump_tree(tree, indent = 0)
+        STDERR.print " " * indent
+        STDERR.print "#{tree.type} #{tree.value}\n"
+        tree.children.each do |c|
+          debug_dump_tree(c, indent + 2)
+        end
+      end
+
+      def convert_ref(el, indent)
+        if @xref_table[el.value]
+          "(#{@xref_table[el.value].full_mark})"
+        else
+          "(???)"
+        end
+      end
+
+      def convert_label(el, indent)
+        ""
+      end
+
+      def find_first_type(el, type)
+        return el if [type].flatten.include?(el.type)
+        el.children.each do |c|
+          if element = find_first_type(c, type)
+            return element
+          end
+        end
+        return nil
+      end
+
+      def make_xref(el)
+        if el.type == :li && el.value && (label = find_first_type(el, :label))
+          @xref_table[label.value] = el.value
+        end
+        el.children.each do |child|
+          make_xref(child)
+        end
+        return el
+      end
+
+      # def add_numbers_to_li_text(el)
+      #   if el.type == :li && el.value && (text = find_first_type(el, [:ref, :text]))
+      #     STDERR.print "TEXT #{text.type}\n"
+      #     if text.type == :text
+      #       text.value = "(#{el.value.mark}) #{text.value}"
+      #     else
+      #       # :ref
+      #       # XXX
+      #     end
+      #   end
+      #   el.children.each do |child|
+      #     add_numbers_to_li_text(child)
+      #   end
+      #   return el
+      # end
 
       def options_to_attributes(el, option_name, attr_name)
         if el.options[option_name]
@@ -260,7 +427,15 @@ end # module Kramdown
 #
 class JayFlavoredMarkdownFilter < HTML::Pipeline::TextFilter
   def call
-    Kramdown::Document.new(@text, context).to_line_numbered_html.strip.force_encoding("utf-8")
+    Kramdown::Document.new(@text, {
+                             input: "JayKramdown",
+                             # syntax_highlighter: :rouge,
+                             # syntax_highlighter_opts: {
+                             #  line_numbers: true,
+                             #  css_class: 'codehilite'
+                             # }
+                           }
+                          ).to_line_numbered_html.strip.force_encoding("utf-8")
   end
 end
 
@@ -671,15 +846,15 @@ class JayFlavoredMarkdownConverter
     {
       input: "GFM",
       asset_root: 'https://assets-cdn.github.com/images/icons/',
-      whitelist: whitelist
+      whitelist: whitelist,
+      syntax_highlighter: :rouge,
+      syntax_highlighter_opts: {inline_theme: true, line_numbers: true, code_class: 'codehilite'}
     }
   end
 
   def pipeline
     HTML::Pipeline.new [
       JayFixIndentDepth,
-      JayAddLabelToListItems,
-      JayAddCrossReference,
       JayAddLink,
       JayFlavoredMarkdownFilter,
       JayCustomItemBullet::Filter,
@@ -732,5 +907,10 @@ class JayFlavoredMarkdownToPlainTextConverter
 end
 
 if __FILE__ == $0
+  puts <<-EOF
+    <style>
+      ol {list-style-type: none;}
+    </style>
+  EOF
   puts JayFlavoredMarkdownConverter.new(gets(nil)).content
 end

@@ -25,6 +25,10 @@ if __FILE__ == $0
   require "pp"
 end
 
+
+require File.expand_path("../markdown_to_ascii", __FILE__)
+
+
 ################################################################
 ## Helper classes to manipulate list items
 class LeveledCounter
@@ -439,6 +443,23 @@ class JayFlavoredMarkdownFilter < HTML::Pipeline::TextFilter
   end
 end
 
+#
+# Convert Text to HTML filter conformed to HTML::Pipeline
+# https://github.com/jch/html-pipeline
+#
+class JayFlavoredMarkdownToAsciiFilter < HTML::Pipeline::TextFilter
+  def call
+    Kramdown::Document.new(@text, {
+                             input: "JayKramdown",
+                             # syntax_highlighter: :rouge,
+                             # syntax_highlighter_opts: {
+                             #  line_numbers: true,
+                             #  css_class: 'codehilite'
+                             # }
+                           }
+                          ).to_ascii.strip.force_encoding("utf-8")
+  end
+end
 
 ################################################################
 ## Markdown to Markdown filters
@@ -897,20 +918,33 @@ class JayFlavoredMarkdownToPlainTextConverter
   def pipeline
     HTML::Pipeline.new [
       JayFixIndentDepth,
-      JayAddLabelToListItems,
-      JayAddCrossReference,
-      JayRemoveMarkupElements,
-      JayShortenIndent,
-      JayFillColumns,
+      JayFlavoredMarkdownToAsciiFilter,
+      # JayAddLabelToListItems,
+      # JayAddCrossReference,
+      # JayRemoveMarkupElements,
+      # JayShortenIndent,
+      # JayFillColumns,
     ], context.merge(@options)
   end
 end
 
 if __FILE__ == $0
-  puts <<-EOF
+
+  output_type = :html
+
+  if ARGV[0] =~ /^--output/
+    ARGV.shift
+    output_type = ARGV.shift
+  end
+
+  if  output_type == :html
+    puts <<-EOF
     <style>
       ol {list-style-type: none;}
     </style>
-  EOF
-  puts JayFlavoredMarkdownConverter.new(gets(nil)).content
+    EOF
+    puts JayFlavoredMarkdownConverter.new(gets(nil)).content
+  else
+    puts JayFlavoredMarkdownToPlainTextConverter.new(gets(nil)).content
+  end
 end

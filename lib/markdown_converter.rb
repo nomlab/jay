@@ -376,7 +376,7 @@ module Kramdown
         @root = options_to_attributes(@root, :location, "data-linenum")
         # @root = add_numbers_to_li_text(@root)
         @root = make_xref(@root)
-        # debug_dump_tree(@root)
+        debug_dump_tree(@root) if $JAY_DEBUG
         @root
       end
 
@@ -959,12 +959,17 @@ if __FILE__ == $0
 
   output_type = :html
 
-  if ARGV[0] =~ /^--output/
+  while ARGV[0] =~ /^--(.*)/
     ARGV.shift
-    output_type = ARGV.shift
+    case $1
+    when "output"
+      output_type = ARGV.shift
+    when "debug"
+      $JAY_DEBUG = true
+    end
   end
 
-  if  output_type == :html
+  if  output_type == "html"
     puts <<-EOF
     <style>
       ol {list-style-type: none;}

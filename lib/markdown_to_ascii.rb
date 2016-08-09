@@ -43,11 +43,13 @@ module Kramdown
         @stack = []
         @xref_table = {}
         @root = make_xref(@root)
+        debug_dump_tree(@root) if $JAY_DEBUG
+        @root
       end
 
       # Dispatch the conversion of the element +el+ to a +convert_TYPE+ method using the +type+ of
       # the element.
-      def convert(el, indent = -@indent)
+      def convert(el, indent = 0)
         send(DISPATCHER[el.type], el, indent)
       end
 
@@ -64,7 +66,6 @@ module Kramdown
       # afterwards.
       def inner(el, indent)
         result = ""
-        indent += @indent
         @stack.push(el)
         el.children.each do |inner_el|
           result << send(DISPATCHER[inner_el.type], inner_el, indent)
@@ -75,44 +76,52 @@ module Kramdown
 
       # Format the given element as span text.
       def format_as_span(name, attr, body)
-        body.to_s
+        return "<SPAN:#{name}>#{body}</SPAN:#{name}>" if $JAY_DEBUG
+        return body.to_s.gsub(/\n */, "")
+      end
+
+      # Format the given element as span text.
+      def format_blank(name, attr, body)
+        return "<SPAN:#{name}>#{body}</SPAN:#{name}>" if $JAY_DEBUG
+        return body.to_s
       end
 
       # Format the given element as block text.
       def format_as_block(name, attr, body, indent)
-        "#{' '*indent}<#{name}#{html_attributes(attr)}>#{body}</#{name}>\n"
+        return "<BLOCK:#{name}>#{body}\n</BLOCK:#{name}>" if $JAY_DEBUG
+        return "#{' '*indent}#{body}\n"
       end
 
-      # Format the given element as block text with a newline after the start tag and indentation
-      # before the end tag.
-      def format_as_indented_block(name, attr, body, indent)
-        "#{' '*indent}<#{name}#{html_attributes(attr)}>\n#{body}#{' '*indent}</#{name}>\n"
+      def format_as_transparent_block(name, attr, body, indent)
+        return "<BLOCK:#{name}>#{body}</BLOCK:#{name}>" if $JAY_DEBUG
+        return "#{body}\n".sub(/\n+$/, "\n")
       end
 
       ################################################################
       # conver each element
       def convert_blank(el, indent)
-        "\n"
+        format_blank("blank", nil, "\n")
       end
 
       def convert_text(el, indent)
-        el.value
+        format_as_span("text", nil, el.value)
       end
 
       def convert_p(el, indent)
-        inner(el, indent)
+        # p の中は indent を増やさないので - @indent する
+        format_as_transparent_block("p", nil, inner(el, indent), indent)
       end
 
       def convert_codeblock(el, indent)
-        inner(el, indent)
+        el.value.to_s
       end
 
       def convert_blockquote(el, indent)
-        inner(el, indent)
+        inner(el, indent + 2)
       end
 
       def convert_header(el, indent)
-        "= " + inner(el, indent) + "\n"
+        format_as_block("head", nil, "#{el.options[:section_counter].full_mark} " + inner(el, indent), indent)
       end
 
       def convert_hr(el, indent)
@@ -120,22 +129,25 @@ module Kramdown
       end
 
       def convert_ul(el, indent)
-        inner(el, indent)
+        format_as_transparent_block("ul", nil, inner(el, indent), indent)
       end
 
       def convert_dl(el, indent)
-        inner(el, indent)
+        format_as_block("dl", nil, inner(el, indent), indent)
       end
 
       def convert_li(el, indent)
         output = ''
-        if el.value
-          # 本来は，こちらで動かさないといけない．HTML の Converter の convert_li に bullet を入れるべき
-          # output = ' '*indent << "(#{el.value.mark})" << inner(el, indent) << "\n"
-          output = ' '*indent << inner(el, indent) << "\n"
-        else
-          output = ' '*indent << "* " << inner(el, indent) << "\n"
-        end
+
+        # 本来は，こちらで動かさないといけない．HTML の Converter の convert_li に bullet を入れるべき
+        # bullet = el.value ? "(#{el.value.mark})" : "* "
+
+        bullet = el.value ? "" : "* "
+
+        output << "<BLOCK:li>" if $JAY_DEBUG
+        output << ' '*(indent) << bullet << inner(el, indent + 2)
+        output << "</BLOCK:li>" if $JAY_DEBUG
+        output
       end
 
       def convert_dt(el, indent)
@@ -284,6 +296,14 @@ module Kramdown
           make_xref(child)
         end
         return el
+      end
+
+      def debug_dump_tree(tree, indent = 0)
+        STDERR.print " " * indent
+        STDERR.print "#{tree.type} <<#{tree.value.to_s.gsub("\n", '\n')}>>\n"
+        tree.children.each do |c|
+          debug_dump_tree(c, indent + 2)
+        end
       end
 
     end # class Ascii

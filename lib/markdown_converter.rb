@@ -318,9 +318,36 @@ module Kramdown
         exit_ol(el)
       end
 
+      ### header
+
+      def visit_header(el)
+
+        diff = el.options[:level] - (@current_level || 1)
+
+        if diff == 0
+          if @current_level
+            @section_counter = @section_counter.next
+          else
+            @section_counter = LeveledCounter.create(:section)
+          end
+        elsif diff > 0
+          diff.times { @section_counter = @section_counter.next_level }
+        elsif diff < 0
+          (-diff).times { @section_counter = @section_counter.previous_level }
+          @section_counter = @section_counter.next
+        end
+
+        el.options[:section_counter] = @section_counter
+        @current_level = el.options[:level]
+      end
+
+      ### header/ol
+
       def add_numbers_to_tree(el)
         if el.type == :ol
           visit_ol(el)
+        elsif el.type == :header
+          visit_header(el)
         else
           el.children.each do |child|
             add_numbers_to_tree(child)

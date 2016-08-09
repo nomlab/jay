@@ -478,6 +478,13 @@ class JayFlavoredMarkdownToAsciiFilter < HTML::Pipeline::TextFilter
   def call
     Kramdown::Document.new(@text, {
                              input: "JayKramdown",
+                             # hard_wrap は，GFM (の継承先JayKramdown)において有効
+                             # :text エレメントの中に改行がある場合の挙動が代わる．
+                             # "aaaaa\nbbbbb"
+                             #   hard_wrap: false の場合，text: aaaaa, text: "\nbbbbb"
+                             #   hard_wrap: true の場合， text:(aaaaa), :br, :text:("\nbbbbb")
+                             # GFM デフォルト true
+                             # hard_wrap: false,
                              # syntax_highlighter: :rouge,
                              # syntax_highlighter_opts: {
                              #  line_numbers: true,
@@ -937,6 +944,7 @@ class JayFlavoredMarkdownToPlainTextConverter
     whitelist[:attributes][:all] << "data-linenum"
     {
       input: "GFM",
+      # hard_wrap: false,
       asset_root: 'https://assets-cdn.github.com/images/icons/',
       whitelist: whitelist
     }

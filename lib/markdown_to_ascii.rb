@@ -11,6 +11,27 @@ require 'kramdown/parser'
 require 'kramdown/converter'
 require 'kramdown/utils'
 
+# block 間の明示的な改行は， :blank エレメントとしてパーズされる
+# span 中の改行は， :text エレメント中に残り，かつ，:br が挟まる
+#
+# + :blank は，そのまま反映する
+# + span 中の改行と :br は全て削る
+# + block の後には改行を1つ入れるが，block がネストしている場合は，改行が続くので，1つに集約する
+#
+# block は，通常インデントする必要はない．
+# :root, :blank, :p, :header, :hr, :table, :tr, :td
+#
+# 以下のブロックは，インデントをする
+# :blockquote, :codeblock
+#
+# :ul, :ol，:li, :dl  はインデントする
+#
+# dt (term), dd (definition)
+#
+# li は，中のブロック
+# <ul> や <p> のように 実体のない (transparent) ブロックは，何もしない
+# <li> のように，ぶら下げるブロックはインデントしない
+
 module Kramdown
   module Converter
 

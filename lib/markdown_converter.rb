@@ -268,14 +268,14 @@ module Kramdown
       LABEL_TAGS_START = /<<([^<>]+)>>/
       def parse_label_tags
         @src.pos += @src.matched_size
-        @tree.children << Element.new(:label, @src[1])
+        @tree.children << Element.new(:label, @src[1], nil, category: :span)
       end
       define_parser(:label_tags, LABEL_TAGS_START, '<<')
 
       REF_TAGS_START = /\[\[(.*?)\]\]/
       def parse_ref_tags
         @src.pos += @src.matched_size
-        @tree.children << Element.new(:ref, @src[1])
+        @tree.children << Element.new(:ref, @src[1], nil, category: :span)
       end
       define_parser(:ref_tags, REF_TAGS_START, '\[\[')
 

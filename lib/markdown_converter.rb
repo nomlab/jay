@@ -294,15 +294,7 @@ module Kramdown
       def visit_ol_li(el, first = false)
         @label_counter = @label_counter.next unless first
         el.value = @label_counter
-
-        # XXX: Inject text bullet (A) next to the LI tag.
-        #      This code should be in Converter#convert_li
-        label = Element.new(:text, "(#{@label_counter.mark}) ")
-        if el.children.empty? || Element.category(el.children.first) != :block
-          el.children.unshift(label)
-        else
-          el.children.first.children.unshift(label)
-        end
+        el.attr[:class] = "bullet-list-item"
       end
 
       def visit_ol(el)
@@ -437,6 +429,44 @@ module Kramdown
       #   end
       #   return el
       # end
+
+      #
+      # Add span tags and css classes to list headers.
+      #
+      # Original HTML:
+      #   <ul>
+      #     <li>(1) item header1</li>
+      #     <li>(2) item header2</li>
+      #   </ul>
+      #
+      # This method:
+      #   <ul>
+      #     <li class="bullet-list-item">
+      #       <span class="bullet-list-marker">(1)</span> item header1
+      #     </li>
+      #     <li class="bullet-list-item">
+      #       <span class="bullet-list-marker">(2)</span> item header2
+      #     </li>
+      #   </ul>
+      #
+      def convert_li(el, indent)
+        output = ' '*indent << "<#{el.type}" << html_attributes(el.attr) << ">"
+
+        if el.value.respond_to?(:mark)
+          output << "<span class=\"bullet-list-marker\">(#{el.value.mark})</span>"
+        end
+
+        res = inner(el, indent)
+        if el.children.empty? || (el.children.first.type == :p && el.children.first.options[:transparent])
+          output << res << (res =~ /\n\Z/ ? ' '*indent : '')
+        else
+          output << "\n" << res << ' '*indent
+        end
+        output << "</#{el.type}>\n"
+        STDERR.puts "LI: #{output}"
+        output
+      end
+
 
       def options_to_attributes(el, option_name, attr_name)
         if el.options[option_name]
@@ -912,7 +942,6 @@ class JayFlavoredMarkdownConverter
       JayFixIndentDepth,
       JayAddLink,
       JayFlavoredMarkdownFilter,
-      JayCustomItemBullet::Filter,
       HTML::Pipeline::AutolinkFilter,
       # HTML::Pipeline::SanitizationFilter,
       HTML::Pipeline::ImageMaxWidthFilter,

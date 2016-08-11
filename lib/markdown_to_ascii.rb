@@ -370,6 +370,14 @@ module Kramdown
         ""
       end
 
+      def convert_action_item(el, indent)
+        "-->(#{el.options[:assignee]})"
+      end
+
+      def convert_issue_link(el, indent)
+        el.options[:match]
+      end
+
       def find_first_type(el, type)
         return el if [type].flatten.include?(el.type)
         el.children.each do |c|

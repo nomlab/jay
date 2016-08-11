@@ -244,6 +244,8 @@ module Kramdown
         super
         @span_parsers.unshift(:label_tags)
         @span_parsers.unshift(:ref_tags)
+        @span_parsers.unshift(:action_item_tags)
+        @span_parsers.unshift(:issue_link_tags)
       end
 
       def parse
@@ -278,6 +280,24 @@ module Kramdown
         @tree.children << Element.new(:ref, @src[1], nil, category: :span)
       end
       define_parser(:ref_tags, REF_TAGS_START, '\[\[')
+
+      ACTION_ITEM_TAGS_START = /-->\((.+?)!:([0-9]{4})\)/
+      def parse_action_item_tags
+        assignee, action = @src[1].strip, @src[2].strip
+        @src.pos += @src.matched_size
+        @tree.children << Element.new(:action_item, nil, {"class" => "action-item", "data-action-item" => action}, :assignee => assignee, :action => action, :location => @src.current_line_number)
+      end
+      define_parser(:action_item_tags, ACTION_ITEM_TAGS_START, '-->')
+
+      # FIXME: organizetionの省略に対応したら，コメントアウトされた正規表現を使用
+      # ISSUE_LINK_TAGS_START = /(?:([\w.-]+)\/)??(?:([\w.-]+)\/)?#(\d+)/
+      ISSUE_LINK_TAGS_START = /([\w.-]+)\/([\w.-]+)\/#(\d+)/
+      def parse_issue_link_tags
+        url = "https://github.com/#{@src[1]}/#{@src[2]}/issues/#{@src[3]}"
+        @src.pos += @src.matched_size
+        @tree.children << Element.new(:issue_link, nil, {"class" => "github-issue", "href" => url}, :match => @src[0], :location => @src.current_line_number)
+      end
+      define_parser(:issue_link_tags, ISSUE_LINK_TAGS_START, '')
 
       def enter_ol(el)
         if @label_counter
@@ -392,6 +412,15 @@ module Kramdown
 
       def convert_label(el, indent)
         ""
+      end
+
+      def convert_action_item(el, indent)
+        el.attr[:href] = ""
+        format_as_span_html(:a, el.attr, "-->(#{el.options[:assignee]} !:#{el.options[:action]})")
+      end
+
+      def convert_issue_link(el, indent)
+        format_as_span_html(:a, el.attr, el.options[:match])
       end
 
       def find_first_type(el, type)
@@ -940,7 +969,7 @@ class JayFlavoredMarkdownConverter
   def pipeline
     HTML::Pipeline.new [
       JayFixIndentDepth,
-      JayAddLink,
+      # JayAddLink,
       JayFlavoredMarkdownFilter,
       HTML::Pipeline::AutolinkFilter,
       # HTML::Pipeline::SanitizationFilter,

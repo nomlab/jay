@@ -358,18 +358,6 @@ module Kramdown
         ""
       end
 
-      def convert_ref(el, indent)
-        if @xref_table[el.value]
-          "(#{@xref_table[el.value].full_mark})"
-        else
-          "(???)"
-        end
-      end
-
-      def convert_label(el, indent)
-        ""
-      end
-
       def convert_action_item(el, indent)
         "-->(#{el.options[:assignee]})"
       end

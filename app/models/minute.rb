@@ -4,6 +4,20 @@ class Minute < ActiveRecord::Base
   has_and_belongs_to_many :tags
   before_validation :add_unique_action_item_marker
 
+  scope :tag, lambda { |name, ope|
+    if ope == "eq"
+      includes(:tags).where("tags.name" => name)
+    elsif ope == "not_eq"
+      includes(:tags).where.not("tags.name" => name)
+    end }
+
+  scope :author, lambda { |name, ope|
+    if ope == "eq"
+      includes(:author).where("users.screen_name" => name)
+    elsif ope == "not_eq"
+      includes(:author).where.not("users.screen_name" => name)
+    end }
+
   def organization
     ApplicationSettings.github.organization
   end

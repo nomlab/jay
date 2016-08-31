@@ -6,7 +6,7 @@
 
 = form_tag minutes_path, :method => 'get', :name => :search_form do
   .field.input-group
-    = text_field_tag :search, params[:search], class: "form-control", placeholder: "tag:record author:jay-doe"
+    = text_field_tag :search, params[:search], class: "form-control", placeholder: "tag:record author:jay-doe", autocomplete: "off", id: "search-form"
     %span.input-group-addon.btn.btn-primary{:onclick => "document.search_form.submit();"}
       = glyphicon("search")
 

@@ -51,13 +51,4 @@ class Minute < ActiveRecord::Base
       end
     end.join("\n")
   end
-
-  def self.search(search)
-    if search
-      tag = Tag.find_by(name: search)
-      return tag.minutes
-    else
-      Minute.all
-    end
-  end
 end

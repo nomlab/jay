@@ -4,7 +4,13 @@ class MinutesController < ApplicationController
   # GET /minutes
   # GET /minutes.json
   def index
-    @minutes = Minute.order('dtstart DESC')
+    @minutes = Minute.search(params[:search])
+    if @minutes.class == Array
+      @minutes = Kaminari.paginate_array(@minutes).page(params[:page]).per(25)
+    else
+      @minutes = @minutes.page(params[:page]).per(25)
+    end
+
     respond_to do |format|
       format.html {}
       format.json { render json: @minutes, include: {author: {only: :name}} }

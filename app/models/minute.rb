@@ -1,3 +1,4 @@
+# coding: utf-8
 class Minute < ActiveRecord::Base
   belongs_to :author, :class_name => "User", :foreign_key => :author_id
   has_and_belongs_to_many :tags
@@ -35,5 +36,14 @@ class Minute < ActiveRecord::Base
         "-->(#{assignee} !:#{action})"
       end
     end.join("\n")
+  end
+
+  def self.search(search)
+    if search
+      tag = Tag.find_by(name: search)
+      return tag.minutes
+    else
+      Minute.all
+    end
   end
 end

@@ -93,6 +93,36 @@ class MinutesController < ApplicationController
     @minute = @minute.dup
   end
 
+  # for ajax search
+  def search_by_tag
+    unless tag = Tag.find_by(name: params[:tag_name])
+      render json: nil
+    else
+      render json: tag.minutes, include: {author: {only: :name}}
+    end
+  end
+
+  # POST minutes/comment
+  def comment
+    render nothing: true
+    url = params[:url]
+    comment = params[:comment]
+    body = {"body" => comment}
+
+    uri = URI.parse(url)
+    http = Net::HTTP.new(uri.host, uri.port)
+
+    http.use_ssl = true
+    http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+
+    req = Net::HTTP::Post.new(uri.path)
+    req['Content-Type'] = "application/json"
+    req['Authorization'] = "token "+session[:access_token]
+    req.body = JSON.generate({"body" => comment})
+
+    res = http.request(req)
+  end
+
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_minute

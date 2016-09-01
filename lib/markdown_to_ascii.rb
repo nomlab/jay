@@ -63,8 +63,11 @@ module Kramdown
         @indent = 2
         @stack = []
         @xref_table = {}
-        @root = make_xref(@root)
-        @root = make_patent_link(@root)
+        ref_visitor = ReferenceVisitor.new
+        @root = ref_visitor.traverse(@root)
+        @xref_table = ref_visitor.xref_table
+        @item_table = ref_visitor.item_table
+        @section_table = ref_visitor.section_table
         debug_dump_tree(@root) if $JAY_DEBUG
         @root
       end
@@ -119,7 +122,7 @@ module Kramdown
         el.children.each do |inner_el|
           str = send(DISPATCHER[inner_el.type], inner_el, current_indent)
 
-          if ancestor?(el, :blockquote)
+          if el.ancestor?(:blockquote)
             body << str # no wrap
           elsif Element.category(inner_el) == :span
             span << str
@@ -195,7 +198,7 @@ module Kramdown
       end
 
       def convert_header(el, indent)
-        render_block(el, indent, 0, "#{el.options[:section_counter].full_mark}")
+        render_block(el, indent, 0, "#{el.value.full_mark}")
       end
 
       def convert_hr(el, indent)
@@ -348,10 +351,16 @@ module Kramdown
 
       def convert_ref(el, indent)
         if @xref_table[el.value]
-          "(#{@xref_table[el.value].full_mark})"
-        else
-          "(???)"
+          return "(#{@xref_table[el.value].full_mark})"
+        elsif el.value =~ /^(\++|-+)$/
+          parent = el.find_first_ancestor(:header) || el.find_first_ancestor(:li)
+          table = parent.type == :li ? @item_table : @section_table
+          rel_pos = ($1.include?("+") ? 1 : -1) * $1.length
+          idx = parent.options[:relative_position] + rel_pos
+          ref_el = idx >= 0 ? table[idx] : nil
+          return "(#{ref_el.value.full_mark})" if ref_el
         end
+        "(???)"
       end
 
       def convert_label(el, indent)
@@ -364,54 +373,6 @@ module Kramdown
 
       def convert_issue_link(el, indent)
         el.options[:match]
-      end
-
-      def find_first_type(el, type)
-        return el if [type].flatten.include?(el.type)
-        el.children.each do |c|
-          if element = find_first_type(c, type)
-            return element
-          end
-        end
-        return nil
-      end
-
-      def make_patent_link(el)
-        el.children.each do |child|
-          child.options[:parent] = el
-          make_patent_link(child)
-        end
-        return el
-      end
-
-      def parent(el)
-        el.options[:parent]
-      end
-
-      def parents(el)
-        ps = []
-        while el = parent(el)
-          ps << el
-        end
-        return ps
-      end
-
-      def parent?(el, type)
-        (p = parent(el)) && p.type == type
-      end
-
-      def ancestor?(el, type)
-        parents(el).map(&:type).include?(type)
-      end
-
-      def make_xref(el)
-        if el.type == :li && el.value && (label = find_first_type(el, :label))
-          @xref_table[label.value] = el.value
-        end
-        el.children.each do |child|
-          make_xref(child)
-        end
-        return el
       end
 
       def debug_dump_tree(tree, indent = 0)

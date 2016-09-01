@@ -41,20 +41,36 @@ class LeveledCounter
     end
   end
 
-  def initialize(init = init_values.take(1))
+  def initialize(init = init_values.take(0))
     @counter = init
   end
 
   def next
-    new {|c| c[level] && c[level].succ!}
+    new do |c|
+      succ(c, level)
+    end
   end
 
   def next_level
-    new {|c| c << init_values[level + 1]}
+    new {|c| c << nil}
   end
 
   def previous_level
     new {|c| c.pop}
+  end
+
+  def set_level(lv)
+    new do |c|
+      diff = lv - c.size
+      if diff > 0
+        diff.times {|i| c << init_values[c.size - 1]}
+      elsif diff < 0
+        (-diff).times { c.pop }
+        succ(c, c.size - 1)
+      else
+        succ(c, level)
+      end
+    end
   end
 
   def reset
@@ -85,6 +101,10 @@ class LeveledCounter
 
   def count_separator
     self.class::COUNT_SEPARATOR
+  end
+
+  def succ(counter, idx)
+    counter[idx] ? counter[idx].succ! : (counter[idx] = init_values[idx])
   end
 
   def new
@@ -133,7 +153,7 @@ class MarkdownFeature
   end
 
   def create_counter
-    LeveledCounter.create(type)
+    LeveledCounter.create(type).next_level
   end
 
   def select_counter(counters)
@@ -230,6 +250,140 @@ class MarkdownEnumerator
   end
 end
 
+module TreeUtils
+  attr_accessor :parent
+
+  def make_parent_link
+    @children.each do |child|
+      child.parent = self
+      child.make_parent_link
+    end
+    return self
+  end
+
+  def parents
+    ps = []
+    el = self
+    while el = el.parent
+      ps << el
+    end
+    return ps
+  end
+
+  def find_first_ancestor(type)
+    parents.find do |parent|
+      parent.type == type
+    end
+  end
+
+  def parent?(type)
+    parent && parent.type == type
+  end
+
+  def ancestor?(type)
+    parents.map(&:type).include?(type)
+  end
+end
+
+class Visitor
+  DISPATCHER = Hash.new {|h,k| h[k] = "visit_#{k}"}
+
+  def traverse(el)
+    call = DISPATCHER[el.type]
+    if respond_to?(call)
+      send(call, el)
+    else
+      el.children.each do |child|
+        traverse(child)
+      end
+    end
+    return el
+  end
+end
+
+class NumberingVisitor < Visitor
+  def initialize
+    @label_counter = LeveledCounter.create(:item)
+    @section_counter = SectionCounter.create(:section)
+  end
+
+  def visit_ol(el)
+    enter_ol(el)
+    el.children.each do |child|
+      traverse(child)
+    end
+    exit_ol(el)
+  end
+
+  def visit_li(el)
+    if el.parent.type == :ol
+      @label_counter = @label_counter.next
+      el.value = @label_counter
+      el.attr[:class] = "bullet-list-item"
+    end
+    el.children.each do |child|
+      traverse(child)
+    end
+  end
+
+  def visit_header(el)
+    @section_counter = @section_counter.set_level(el.options[:level])
+    el.value = @section_counter
+  end
+
+  private
+
+  def enter_ol(el)
+    @label_counter = @label_counter.next_level
+  end
+
+  def exit_ol(el)
+    @label_counter = @label_counter.previous_level
+  end
+end
+
+class ReferenceVisitor < Visitor
+  def initialize
+    @xref_table = {}
+    @item_table = []
+    @section_table = []
+  end
+  attr_reader :xref_table, :item_table, :section_table
+
+  def visit_label(el)
+    ref = el.find_first_ancestor(:header) || el.find_first_ancestor(:li)
+    @xref_table[el.value] = ref.value if ref.value
+    el.children.each do |child|
+      traverse(child)
+    end
+    return el
+  end
+
+  def visit_li(el)
+    el.options[:relative_position] = @item_table.size
+    @item_table << el
+    el.children.each do |child|
+      traverse(child)
+    end
+    return el
+  end
+
+  def visit_header(el)
+    el.options[:relative_position] = @section_table.size
+    @section_table << el
+    el.children.each do |child|
+      traverse(child)
+    end
+    return el
+  end
+end
+
+module Kramdown
+  class Element
+    include TreeUtils
+  end
+end
+
 ################################################################
 ## Kramdown parser with Jay hack
 
@@ -250,7 +404,8 @@ module Kramdown
 
       def parse
         super
-        @root = add_numbers_to_tree(@root)
+        @root.make_parent_link
+        @root = NumberingVisitor.new.traverse(@root)
       end
 
       # Override element type:
@@ -298,75 +453,6 @@ module Kramdown
         @tree.children << Element.new(:issue_link, nil, {"class" => "github-issue", "href" => url}, :match => @src[0], :location => @src.current_line_number)
       end
       define_parser(:issue_link_tags, ISSUE_LINK_TAGS_START, '')
-
-      def enter_ol(el)
-        if @label_counter
-          @label_counter = @label_counter.next_level
-        else
-          @label_counter = LeveledCounter.create(:item)
-        end
-      end
-
-      def exit_ol(el)
-        @label_counter = @label_counter.previous_level
-      end
-
-      def visit_ol_li(el, first = false)
-        @label_counter = @label_counter.next unless first
-        el.value = @label_counter
-        el.attr[:class] = "bullet-list-item"
-      end
-
-      def visit_ol(el)
-        enter_ol(el)
-        first = true
-        el.children.each do |child|
-          if child.type == :li
-            visit_ol_li(child, first)
-            first = false
-          end
-          add_numbers_to_tree(child)
-        end
-        exit_ol(el)
-      end
-
-      ### header
-
-      def visit_header(el)
-
-        diff = el.options[:level] - (@current_level || 1)
-
-        if diff == 0
-          if @current_level
-            @section_counter = @section_counter.next
-          else
-            @section_counter = LeveledCounter.create(:section)
-          end
-        elsif diff > 0
-          diff.times { @section_counter = @section_counter.next_level }
-        elsif diff < 0
-          (-diff).times { @section_counter = @section_counter.previous_level }
-          @section_counter = @section_counter.next
-        end
-
-        el.options[:section_counter] = @section_counter
-        @current_level = el.options[:level]
-      end
-
-      ### header/ol
-
-      def add_numbers_to_tree(el)
-        if el.type == :ol
-          visit_ol(el)
-        elsif el.type == :header
-          visit_header(el)
-        else
-          el.children.each do |child|
-            add_numbers_to_tree(child)
-          end
-        end
-        return el
-      end
     end
   end
 end
@@ -387,7 +473,11 @@ module Kramdown
         @xref_table = {}
         @root = options_to_attributes(@root, :location, "data-linenum")
         # @root = add_numbers_to_li_text(@root)
-        @root = make_xref(@root)
+        ref_visitor = ReferenceVisitor.new
+        @root = ref_visitor.traverse(@root)
+        @xref_table = ref_visitor.xref_table
+        @item_table = ref_visitor.item_table
+        @section_table = ref_visitor.section_table
         debug_dump_tree(@root) if $JAY_DEBUG
         @root
       end
@@ -404,10 +494,16 @@ module Kramdown
 
       def convert_ref(el, indent)
         if @xref_table[el.value]
-          "(#{@xref_table[el.value].full_mark})"
-        else
-          "(???)"
+          return "(#{@xref_table[el.value].full_mark})"
+        elsif el.value =~ /^(\++|-+)$/
+          parent = el.find_first_ancestor(:header) || el.find_first_ancestor(:li)
+          table = parent.type == :li ? @item_table : @section_table
+          rel_pos = ($1.include?("+") ? 1 : -1) * $1.length
+          idx = parent.options[:relative_position] + rel_pos
+          ref_el = idx >= 0 ? table[idx] : nil
+          return "(#{ref_el.value.full_mark})" if ref_el
         end
+        "(???)"
       end
 
       def convert_label(el, indent)
@@ -423,19 +519,10 @@ module Kramdown
         format_as_span_html(:a, el.attr, el.options[:match])
       end
 
-      def find_first_type(el, type)
-        return el if [type].flatten.include?(el.type)
-        el.children.each do |c|
-          if element = find_first_type(c, type)
-            return element
-          end
-        end
-        return nil
-      end
-
       def make_xref(el)
-        if el.type == :li && el.value && (label = find_first_type(el, :label))
-          @xref_table[label.value] = el.value
+        if el.type == :label
+          ref = el.find_first_ancestor(:header) || el.find_first_ancestor(:li)
+          @xref_table[el.value] = ref.value if ref.value
         end
         el.children.each do |child|
           make_xref(child)
@@ -496,6 +583,15 @@ module Kramdown
         output
       end
 
+      def convert_header(el, indent)
+        attr = el.attr.dup
+        if @options[:auto_ids] && !attr['id']
+          attr['id'] = generate_id(el.options[:raw_text])
+        end
+        @toc << [el.options[:level], attr['id'], el.children] if attr['id'] && in_toc?(el)
+        level = output_header_level(el.options[:level])
+        format_as_block_html("h#{level}", attr, "#{el.value.label} #{inner(el, indent)}", indent)
+      end
 
       def options_to_attributes(el, option_name, attr_name)
         if el.options[option_name]

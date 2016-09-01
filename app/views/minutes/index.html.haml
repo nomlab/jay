@@ -1,8 +1,15 @@
-%h1 Listing Minutes
-.field.input-group
-  %input.form-control#tag-name{autocomplete: "off", type: "text", placeholder: "Search by Tags"}
-  %span.input-group-addon.btn.btn-primary#search-minutes-by-tag
-    = glyphicon("search")
+.row
+  .col-md-12.col-sm-12.text-center.hidden-xs
+    != paginate @minutes
+  .col-xs-12.text-center.visible-xs
+    != paginate @minutes
+
+= form_tag minutes_path, :method => 'get', :name => :search_form do
+  .field.input-group
+    = text_field_tag :search, params[:search], class: "form-control", placeholder: "tag:record author:jay-doe", autocomplete: "off", id: "search-form"
+    %span.input-group-addon.btn.btn-primary{:onclick => "document.search_form.submit();"}
+      = glyphicon("search")
+
 %table.table
   %thead
     %tr
@@ -23,3 +30,9 @@
         %td= link_to icon('trash'), minute, method: :delete, data: { confirm: 'Are you sure?' }
 %br/
 = new_content :minute
+
+.row
+  .col-md-12.col-sm-12.text-center.hidden-xs
+    != paginate @minutes
+  .col-xs-12.text-center.visible-xs
+    != paginate @minutes

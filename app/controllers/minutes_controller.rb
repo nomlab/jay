@@ -4,7 +4,18 @@ class MinutesController < ApplicationController
   # GET /minutes
   # GET /minutes.json
   def index
-    @minutes = Minute.order('dtstart DESC')
+    unless params[:search]
+      @minutes = Minute.all.order('dtstart DESC')
+    else
+      @minutes = Query.new(params[:search]).to_scope.order('dtstart DESC')
+    end
+
+    if @minutes.class == Array
+      @minutes = Kaminari.paginate_array(@minutes).page(params[:page]).per(25)
+    else
+      @minutes = @minutes.page(params[:page]).per(25)
+    end
+
     respond_to do |format|
       format.html {}
       format.json { render json: @minutes, include: {author: {only: :name}} }
@@ -80,15 +91,6 @@ class MinutesController < ApplicationController
 
   def reuse
     @minute = @minute.dup
-  end
-
-  # for ajax search
-  def search_by_tag
-    unless tag = Tag.find_by(name: params[:tag_name])
-      render json: nil
-    else
-      render json: tag.minutes, include: {author: {only: :name}}
-    end
   end
 
   private

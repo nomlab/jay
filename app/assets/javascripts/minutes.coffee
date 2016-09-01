@@ -386,6 +386,66 @@ setupTagForm = (selector) ->
   redisplay() if $('#tag-names').val()?
   setupAutoCompleteTag('#tag-name')
 
+setupAutoCompleteSearchForm = (element) ->
+  $.ajax
+    async:     false
+    type:      "GET"
+    url:       "/tags"
+    dataType:  "json"
+    success:   (tags, status, xhr)   ->
+      window.tag_list = $.map tags, (tag) ->
+        return tag.name
+
+  $.ajax
+    async:     false
+    type:      "GET"
+    url:       "/users"
+    dataType:  "json"
+    success:   (users, status, xhr)   ->
+      window.user_list = $.map users, (user) ->
+        return user.screen_name
+
+  $(element).textcomplete [
+      match:  /tag:([\-+\w]*)$/
+
+      search: (term, callback) ->
+        callback $.map window.tag_list, (tag) ->
+          return tag if tag.indexOf(term) >= 0
+          return null
+
+      replace: (value) ->
+        "tag:#{value}"
+
+      index: 1
+    ],
+    onKeydown: (e, commands) ->
+      return commands.KEY_ENTER if e.ctrlKey && e.keyCode == 74 # CTRL-J
+    zIndex: 10000
+    listPosition: (position) ->
+      this.$el.css(this._applyPlacement(position))
+      this.$el.css('position', 'absolute')
+      return this
+
+  $(element).textcomplete [
+      match:  /author:([\-+\w]*)$/
+
+      search: (term, callback) ->
+        callback $.map window.user_list, (user) ->
+          return user if user.indexOf(term) >= 0
+          return null
+
+      replace: (value) ->
+        "author:#{value}"
+
+      index: 1
+    ],
+    onKeydown: (e, commands) ->
+      return commands.KEY_ENTER if e.ctrlKey && e.keyCode == 74 # CTRL-J
+    zIndex: 10000
+    listPosition: (position) ->
+      this.$el.css(this._applyPlacement(position))
+      this.$el.css('position', 'absolute')
+      return this
 
 setupMinuteSearchButtonCallback = ->
   $('#search-minutes-by-tag').on 'click', (e) ->
@@ -471,6 +531,7 @@ setupIssueForm = (options) ->
 ready = ->
   repos_all = getGithubAllHomeRepositories()
   setupAutoCompleteEmoji('#minute_content')
+  setupAutoCompleteSearchForm('#search-form')
   setupTabCallback()
   setupTagForm('#tag-form')
   setupMinuteSearchButtonCallback()

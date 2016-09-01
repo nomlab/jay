@@ -1,3 +1,14 @@
+- location = @minute.location.present? ? @minute.location : "???"
+- dtstart = @minute.dtstart.strftime("%Y-%m-%d %H:%M:%S") rescue "???"
+- dtend = @minute.dtend.strftime("%Y-%m-%d %H:%M:%S") rescue "???"
+%h2
+  = user_avatar_icon_tag(@minute.author)
+  = @minute.title + " at " + location
+  = link_to minute_path(@minute, "txt"), title: "Download txt", download: @minute.title + ".txt" do
+    %i.fa.fa-download
+%h4
+  = dtstart + " 〜 " + dtend
+
 - @minute.tags.each do |tag|
   = tag_label(tag)
 = render partial: 'content', locals: {text: @minute.cooked_content, organization: @minute.organization}

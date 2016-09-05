@@ -127,13 +127,15 @@ module Kramdown
           elsif Element.category(inner_el) == :span
             span << str
           else
-            body << wrap_block(span, current_indent, 60) if span.length > 0
+            # body << wrap_block(span, current_indent, 60) if span.length > 0
+            body << span
             body << str
             span = ""
           end
         end
         if span.length > 0
-          body << wrap_block(span, current_indent, 60)
+          # body << wrap_block(span, current_indent, 60)
+          body << span
           span = ""
         end
 
@@ -147,6 +149,7 @@ module Kramdown
       end
 
       # XXX この中で span に indent を付けるのはおかしい
+      #
       def wrap_block(body, indent, max_columns)
         # puts "WRAP_BLOCK: #{body}, #{indent}"
         body = remove_indent(body, indent)

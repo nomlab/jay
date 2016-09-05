@@ -1112,7 +1112,7 @@ class JayFlavoredMarkdownToPlainTextConverter
       # JayAddCrossReference,
       # JayRemoveMarkupElements,
       # JayShortenIndent,
-      # JayFillColumns,
+      JayFillColumns,
     ], context.merge(@options)
   end
 end

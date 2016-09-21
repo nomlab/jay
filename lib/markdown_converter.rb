@@ -25,6 +25,10 @@ if __FILE__ == $0
   require "pp"
 end
 
+
+require File.expand_path("../markdown_to_ascii", __FILE__)
+
+
 ################################################################
 ## Helper classes to manipulate list items
 class LeveledCounter
@@ -37,16 +41,36 @@ class LeveledCounter
     end
   end
 
-  def initialize(init = init_values.take(1))
+  def initialize(init = init_values.take(0))
     @counter = init
   end
 
   def next
-    new {|c| c[level] && c[level].succ!}
+    new do |c|
+      succ(c, level)
+    end
   end
 
   def next_level
-    new {|c| c << init_values[level + 1]}
+    new {|c| c << nil}
+  end
+
+  def previous_level
+    new {|c| c.pop}
+  end
+
+  def set_level(lv)
+    new do |c|
+      diff = lv - c.size
+      if diff > 0
+        diff.times {|i| c << init_values[c.size - 1]}
+      elsif diff < 0
+        (-diff).times { c.pop }
+        succ(c, c.size - 1)
+      else
+        succ(c, level)
+      end
+    end
   end
 
   def reset
@@ -77,6 +101,10 @@ class LeveledCounter
 
   def count_separator
     self.class::COUNT_SEPARATOR
+  end
+
+  def succ(counter, idx)
+    counter[idx] ? counter[idx].succ! : (counter[idx] = init_values[idx])
   end
 
   def new
@@ -125,7 +153,7 @@ class MarkdownFeature
   end
 
   def create_counter
-    LeveledCounter.create(type)
+    LeveledCounter.create(type).next_level
   end
 
   def select_counter(counters)
@@ -222,6 +250,213 @@ class MarkdownEnumerator
   end
 end
 
+module TreeUtils
+  attr_accessor :parent
+
+  def make_parent_link
+    @children.each do |child|
+      child.parent = self
+      child.make_parent_link
+    end
+    return self
+  end
+
+  def parents
+    ps = []
+    el = self
+    while el = el.parent
+      ps << el
+    end
+    return ps
+  end
+
+  def find_first_ancestor(type)
+    parents.find do |parent|
+      parent.type == type
+    end
+  end
+
+  def parent?(type)
+    parent && parent.type == type
+  end
+
+  def ancestor?(type)
+    parents.map(&:type).include?(type)
+  end
+end
+
+class Visitor
+  DISPATCHER = Hash.new {|h,k| h[k] = "visit_#{k}"}
+
+  def traverse(el)
+    call = DISPATCHER[el.type]
+    if respond_to?(call)
+      send(call, el)
+    else
+      el.children.each do |child|
+        traverse(child)
+      end
+    end
+    return el
+  end
+end
+
+class NumberingVisitor < Visitor
+  def initialize
+    @label_counter = LeveledCounter.create(:item)
+    @section_counter = SectionCounter.create(:section)
+  end
+
+  def visit_ol(el)
+    enter_ol(el)
+    el.children.each do |child|
+      traverse(child)
+    end
+    exit_ol(el)
+  end
+
+  def visit_li(el)
+    if el.parent.type == :ol
+      @label_counter = @label_counter.next
+      el.value = @label_counter
+      el.attr[:class] = "bullet-list-item"
+    end
+    el.children.each do |child|
+      traverse(child)
+    end
+  end
+
+  def visit_header(el)
+    @section_counter = @section_counter.set_level(el.options[:level])
+    el.value = @section_counter
+  end
+
+  private
+
+  def enter_ol(el)
+    @label_counter = @label_counter.next_level
+  end
+
+  def exit_ol(el)
+    @label_counter = @label_counter.previous_level
+  end
+end
+
+class ReferenceVisitor < Visitor
+  def initialize
+    @xref_table = {}
+    @item_table = []
+    @section_table = []
+  end
+  attr_reader :xref_table, :item_table, :section_table
+
+  def visit_label(el)
+    ref = el.find_first_ancestor(:header) || el.find_first_ancestor(:li)
+    @xref_table[el.value] = ref.value if ref.value
+    el.children.each do |child|
+      traverse(child)
+    end
+    return el
+  end
+
+  def visit_li(el)
+    el.options[:relative_position] = @item_table.size
+    @item_table << el
+    el.children.each do |child|
+      traverse(child)
+    end
+    return el
+  end
+
+  def visit_header(el)
+    el.options[:relative_position] = @section_table.size
+    @section_table << el
+    el.children.each do |child|
+      traverse(child)
+    end
+    return el
+  end
+end
+
+module Kramdown
+  class Element
+    include TreeUtils
+  end
+end
+
+################################################################
+## Kramdown parser with Jay hack
+
+module Kramdown
+  module Parser
+    class JayKramdown < GFM
+
+      JAY_LIST_START_UL = /^(#{OPT_SPACE}[*])([\t| ].*?\n)/
+      JAY_LIST_START_OL = /^(#{OPT_SPACE}(?:\d+\.|[+-]))([\t| ].*?\n)/
+
+      def initialize(source, options)
+        super
+        @span_parsers.unshift(:label_tags)
+        @span_parsers.unshift(:ref_tags)
+        @span_parsers.unshift(:action_item_tags)
+        @span_parsers.unshift(:issue_link_tags)
+      end
+
+      def parse
+        super
+        @root.make_parent_link
+        @root = NumberingVisitor.new.traverse(@root)
+      end
+
+      # Override element type:
+      # Original Kramdown parser recognizes '+' and '-' as UL.
+      # However, Jay takes them as OL.
+      def new_block_el(*args)
+        if args[0] == :ul && @src.check(JAY_LIST_START_OL)
+          args[0] = :ol
+          super(*args)
+        else
+          super(*args)
+        end
+      end
+
+      private
+
+      LABEL_TAGS_START = /<<([^<>]+)>>/
+      def parse_label_tags
+        @src.pos += @src.matched_size
+        @tree.children << Element.new(:label, @src[1], nil, category: :span)
+      end
+      define_parser(:label_tags, LABEL_TAGS_START, '<<')
+
+      REF_TAGS_START = /\[\[(.*?)\]\]/
+      def parse_ref_tags
+        @src.pos += @src.matched_size
+        @tree.children << Element.new(:ref, @src[1], nil, category: :span)
+      end
+      define_parser(:ref_tags, REF_TAGS_START, '\[\[')
+
+      ACTION_ITEM_TAGS_START = /-->\((.+?)!:([0-9]{4})\)/
+      def parse_action_item_tags
+        assignee, action = @src[1].strip, @src[2].strip
+        @src.pos += @src.matched_size
+        @tree.children << Element.new(:action_item, nil, {"class" => "action-item", "data-action-item" => action}, :assignee => assignee, :action => action, :location => @src.current_line_number)
+      end
+      define_parser(:action_item_tags, ACTION_ITEM_TAGS_START, '-->')
+
+      # FIXME: organizetionの省略に対応したら，コメントアウトされた正規表現を使用
+      # ISSUE_LINK_TAGS_START = /(?:([\w.-]+)\/)??(?:([\w.-]+)\/)?#(\d+)/
+      ISSUE_LINK_TAGS_START = /([\w.-]+)\/([\w.-]+)\/#(\d+)/
+      def parse_issue_link_tags
+        url = "https://github.com/#{@src[1]}/#{@src[2]}/issues/#{@src[3]}"
+        @src.pos += @src.matched_size
+        @tree.children << Element.new(:issue_link, nil, {"class" => "github-issue", "href" => url}, :match => @src[0], :location => @src.current_line_number)
+      end
+      define_parser(:issue_link_tags, ISSUE_LINK_TAGS_START, '')
+    end
+  end
+end
+
 ################################################################
 ## Kramdown to HTML converter with additions
 
@@ -235,10 +470,128 @@ module Kramdown
 
       def initialize(root, options)
         super
+        @xref_table = {}
         @root = options_to_attributes(@root, :location, "data-linenum")
+        # @root = add_numbers_to_li_text(@root)
+        ref_visitor = ReferenceVisitor.new
+        @root = ref_visitor.traverse(@root)
+        @xref_table = ref_visitor.xref_table
+        @item_table = ref_visitor.item_table
+        @section_table = ref_visitor.section_table
+        debug_dump_tree(@root) if $JAY_DEBUG
+        @root
       end
 
       private
+
+      def debug_dump_tree(tree, indent = 0)
+        STDERR.print " " * indent
+        STDERR.print "#{tree.type} #{tree.value}\n"
+        tree.children.each do |c|
+          debug_dump_tree(c, indent + 2)
+        end
+      end
+
+      def convert_ref(el, indent)
+        if @xref_table[el.value]
+          return "(#{@xref_table[el.value].full_mark})"
+        elsif el.value =~ /^(\++|-+)$/
+          parent = el.find_first_ancestor(:header) || el.find_first_ancestor(:li)
+          table = parent.type == :li ? @item_table : @section_table
+          rel_pos = ($1.include?("+") ? 1 : -1) * $1.length
+          idx = parent.options[:relative_position] + rel_pos
+          ref_el = idx >= 0 ? table[idx] : nil
+          return "(#{ref_el.value.full_mark})" if ref_el
+        end
+        "(???)"
+      end
+
+      def convert_label(el, indent)
+        ""
+      end
+
+      def convert_action_item(el, indent)
+        el.attr[:href] = ""
+        format_as_span_html(:a, el.attr, "-->(#{el.options[:assignee]} !:#{el.options[:action]})")
+      end
+
+      def convert_issue_link(el, indent)
+        format_as_span_html(:a, el.attr, el.options[:match])
+      end
+
+      def make_xref(el)
+        if el.type == :label
+          ref = el.find_first_ancestor(:header) || el.find_first_ancestor(:li)
+          @xref_table[el.value] = ref.value if ref.value
+        end
+        el.children.each do |child|
+          make_xref(child)
+        end
+        return el
+      end
+
+      # def add_numbers_to_li_text(el)
+      #   if el.type == :li && el.value && (text = find_first_type(el, [:ref, :text]))
+      #     STDERR.print "TEXT #{text.type}\n"
+      #     if text.type == :text
+      #       text.value = "(#{el.value.mark}) #{text.value}"
+      #     else
+      #       # :ref
+      #       # XXX
+      #     end
+      #   end
+      #   el.children.each do |child|
+      #     add_numbers_to_li_text(child)
+      #   end
+      #   return el
+      # end
+
+      #
+      # Add span tags and css classes to list headers.
+      #
+      # Original HTML:
+      #   <ul>
+      #     <li>(1) item header1</li>
+      #     <li>(2) item header2</li>
+      #   </ul>
+      #
+      # This method:
+      #   <ul>
+      #     <li class="bullet-list-item">
+      #       <span class="bullet-list-marker">(1)</span> item header1
+      #     </li>
+      #     <li class="bullet-list-item">
+      #       <span class="bullet-list-marker">(2)</span> item header2
+      #     </li>
+      #   </ul>
+      #
+      def convert_li(el, indent)
+        output = ' '*indent << "<#{el.type}" << html_attributes(el.attr) << ">"
+
+        if el.value.respond_to?(:mark)
+          output << "<span class=\"bullet-list-marker\">(#{el.value.mark})</span>"
+        end
+
+        res = inner(el, indent)
+        if el.children.empty? || (el.children.first.type == :p && el.children.first.options[:transparent])
+          output << res << (res =~ /\n\Z/ ? ' '*indent : '')
+        else
+          output << "\n" << res << ' '*indent
+        end
+        output << "</#{el.type}>\n"
+        STDERR.puts "LI: #{output}"
+        output
+      end
+
+      def convert_header(el, indent)
+        attr = el.attr.dup
+        if @options[:auto_ids] && !attr['id']
+          attr['id'] = generate_id(el.options[:raw_text])
+        end
+        @toc << [el.options[:level], attr['id'], el.children] if attr['id'] && in_toc?(el)
+        level = output_header_level(el.options[:level])
+        format_as_block_html("h#{level}", attr, "#{el.value.label} #{inner(el, indent)}", indent)
+      end
 
       def options_to_attributes(el, option_name, attr_name)
         if el.options[option_name]
@@ -260,10 +613,42 @@ end # module Kramdown
 #
 class JayFlavoredMarkdownFilter < HTML::Pipeline::TextFilter
   def call
-    Kramdown::Document.new(@text, context).to_line_numbered_html.strip.force_encoding("utf-8")
+    Kramdown::Document.new(@text, {
+                             input: "JayKramdown",
+                             # syntax_highlighter: :rouge,
+                             # syntax_highlighter_opts: {
+                             #  line_numbers: true,
+                             #  css_class: 'codehilite'
+                             # }
+                           }
+                          ).to_line_numbered_html.strip.force_encoding("utf-8")
   end
 end
 
+#
+# Convert Text to HTML filter conformed to HTML::Pipeline
+# https://github.com/jch/html-pipeline
+#
+class JayFlavoredMarkdownToAsciiFilter < HTML::Pipeline::TextFilter
+  def call
+    Kramdown::Document.new(@text, {
+                             input: "JayKramdown",
+                             # hard_wrap は，GFM (の継承先JayKramdown)において有効
+                             # :text エレメントの中に改行がある場合の挙動が代わる．
+                             # "aaaaa\nbbbbb"
+                             #   hard_wrap: false の場合，text: aaaaa, text: "\nbbbbb"
+                             #   hard_wrap: true の場合， text:(aaaaa), :br, :text:("\nbbbbb")
+                             # GFM デフォルト true
+                             # hard_wrap: false,
+                             # syntax_highlighter: :rouge,
+                             # syntax_highlighter_opts: {
+                             #  line_numbers: true,
+                             #  css_class: 'codehilite'
+                             # }
+                           }
+                          ).to_ascii.strip.force_encoding("utf-8")
+  end
+end
 
 ################################################################
 ## Markdown to Markdown filters
@@ -671,18 +1056,17 @@ class JayFlavoredMarkdownConverter
     {
       input: "GFM",
       asset_root: 'https://assets-cdn.github.com/images/icons/',
-      whitelist: whitelist
+      whitelist: whitelist,
+      syntax_highlighter: :rouge,
+      syntax_highlighter_opts: {inline_theme: true, line_numbers: true, code_class: 'codehilite'}
     }
   end
 
   def pipeline
     HTML::Pipeline.new [
       JayFixIndentDepth,
-      JayAddLabelToListItems,
-      JayAddCrossReference,
-      JayAddLink,
+      # JayAddLink,
       JayFlavoredMarkdownFilter,
-      JayCustomItemBullet::Filter,
       HTML::Pipeline::AutolinkFilter,
       # HTML::Pipeline::SanitizationFilter,
       HTML::Pipeline::ImageMaxWidthFilter,
@@ -714,6 +1098,7 @@ class JayFlavoredMarkdownToPlainTextConverter
     whitelist[:attributes][:all] << "data-linenum"
     {
       input: "GFM",
+      # hard_wrap: false,
       asset_root: 'https://assets-cdn.github.com/images/icons/',
       whitelist: whitelist
     }
@@ -722,15 +1107,38 @@ class JayFlavoredMarkdownToPlainTextConverter
   def pipeline
     HTML::Pipeline.new [
       JayFixIndentDepth,
-      JayAddLabelToListItems,
-      JayAddCrossReference,
-      JayRemoveMarkupElements,
-      JayShortenIndent,
+      JayFlavoredMarkdownToAsciiFilter,
+      # JayAddLabelToListItems,
+      # JayAddCrossReference,
+      # JayRemoveMarkupElements,
+      # JayShortenIndent,
       JayFillColumns,
     ], context.merge(@options)
   end
 end
 
 if __FILE__ == $0
-  puts JayFlavoredMarkdownConverter.new(gets(nil)).content
+
+  output_type = :html
+
+  while ARGV[0] =~ /^--(.*)/
+    ARGV.shift
+    case $1
+    when "output"
+      output_type = ARGV.shift
+    when "debug"
+      $JAY_DEBUG = true
+    end
+  end
+
+  if  output_type == "html"
+    puts <<-EOF
+    <style>
+      ol {list-style-type: none;}
+    </style>
+    EOF
+    puts JayFlavoredMarkdownConverter.new(gets(nil)).content
+  else
+    puts JayFlavoredMarkdownToPlainTextConverter.new(gets(nil)).content
+  end
 end

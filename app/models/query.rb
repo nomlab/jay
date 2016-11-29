@@ -46,7 +46,7 @@ class Query
     elements = []
     query.split("\s").each do |q|
       element = {}
-      next unless q =~ /(-|)(?:(\w+):|)([\w+-]+)/
+      next unless q =~ /(-?)(?:(\w+):)?(\S+)/
       no, column, argument = $1, $2, $3
 
       if column

@@ -8,6 +8,7 @@ Rails.application.routes.draw do
 
   post "/minutes/preview", to: "minutes#preview"
   get "/minutes/search_by_tag", to: "minutes#search_by_tag"
+  post "/minutes/comment", to: "minutes#comment"
 
   resources :minutes do
     member do

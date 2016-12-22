@@ -211,14 +211,18 @@ newGithubIssue = (repos, issue) ->
 newGithubComment = (repos, target_issue_num, comment) ->
   github = 'https://github.com'
   github_api = 'https://api.github.com'
-  $.ajax
+  res = $.ajax
     async: false
     type: "POST"
     url: "/minutes/comment"
+    dataType: 'json'
     data:
       url: "#{github_api}/repos/#{repos}/issues/#{target_issue_num}/comments"
       comment: comment
-  window.open("#{github}/#{repos}/issues/#{target_issue_num}")
+    success: (res) ->
+      window.open(res.html_url)
+    error: (res) ->
+      alert "Failed to create comment"
 
 # Get User's Github *public* repositories in ORGANIZATION
 # https://developer.github.com/v3/repos/#list-organization-repositories

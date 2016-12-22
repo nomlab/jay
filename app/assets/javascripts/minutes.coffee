@@ -211,14 +211,18 @@ newGithubIssue = (repos, issue) ->
 newGithubComment = (repos, target_issue_num, comment) ->
   github = 'https://github.com'
   github_api = 'https://api.github.com'
-  $.ajax
+  res = $.ajax
     async: false
     type: "POST"
     url: "/minutes/comment"
+    dataType: 'json'
     data:
       url: "#{github_api}/repos/#{repos}/issues/#{target_issue_num}/comments"
       comment: comment
-  window.open("#{github}/#{repos}/issues/#{target_issue_num}")
+    success: (res) ->
+      window.open(res.html_url)
+    error: (res) ->
+      alert "Failed to create comment"
 
 # Get User's Github *public* repositories in ORGANIZATION
 # https://developer.github.com/v3/repos/#list-organization-repositories
@@ -548,8 +552,6 @@ setupIssueForm = (options) ->
 #
 # options = {
 #   selector: CSS selector of target form like '#create-comment-modal'
-#   repos_candidates: Repository names to be listed in repository menu
-#   repos_all: All repository names in ORGANIZATION
 #   repo: Repository name to comment
 #   target: Issue number to comment
 #   description: Issue description (markdown string)
@@ -557,28 +559,17 @@ setupIssueForm = (options) ->
 #
 setupCommentForm = (options) ->
   id = options.selector
+  $("#{id} #target").text("Create comment to #{options.organization}/#{options.repo}/##{options.target}")
   $("#{id} #comment-body").val(options.description)
-  $("#{id} #repository").val(options.repo)
-  $("#{id} #issue").val(options.target)
-
-  str_repos = ""
-  for r in options.repos_candidates
-    str_repos = str_repos + "<label class='label label-primary candidate-repository'>#{r}</label> "
-  $("#{id} #repositories-list").replaceWith("<p id='repositories-list'><i class='fa fa-lightbulb-o fa-fw'></i>#{str_repos}<p>")
-
-  setupAutoCompleteRepository("#repository", options.repos_all)
-
-  $("#{id} .candidate-repository").on 'click', (event) ->
-    $("#{id} #repository").val(event.target.innerHTML)
 
   $("#{id} #submit-button").off('click').on 'click', ->
     param = $("#{id} #comment-form").serializeArray()
-    if param[1].value
+    if param[0].value
       comment = param[0].value
-      newGithubComment("#{options.organization}/#{param[1].value}","#{param[2].value}", comment)
+      newGithubComment("#{options.organization}/#{options.repo}","#{options.target}", comment)
       $('#create-comment-modal').modal("hide")
     else
-      alert "No repository specified"
+      alert "Please input comment"
   return $("#{id}")
 
 ready = ->
@@ -620,8 +611,6 @@ ready = ->
       form = setupCommentForm
         selector: '#create-comment-modal'
         organization: minute.organization
-        repos_candidates: findKeywords(minute.content, repos_all)
-        repos_all: repos_all
         repo: $(this).attr("href").split('/')[4]
         target: $(this).attr("href").split('/')[6]
         description: "Commented from [minute #{minute.id}](#{url}).\n#{description}"

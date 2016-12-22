@@ -104,7 +104,6 @@ class MinutesController < ApplicationController
 
   # POST minutes/comment
   def comment
-    render nothing: true
     url = params[:url]
     comment = params[:comment]
     body = {"body" => comment}
@@ -121,6 +120,7 @@ class MinutesController < ApplicationController
     req.body = JSON.generate({"body" => comment})
 
     res = http.request(req)
+    render json: res.body, status: res.code
   end
 
   private

@@ -3,23 +3,14 @@
     .modal-content
       .modal-header
         %button.close{"aria-hidden" => "true", "data-dismiss" => "modal", :type => "button"} ×
-        %h4.modal-title Create issue
+        %h4.modal-title Create comment
       .modal-body
+        %div#target
         %form#comment-form
           %p
             %b Description
           %p
             %textarea#comment-body{:name => "message", :rows => "7"}
-          %p
-            %b Target repository
-          %p
-            %input#repository{:autocomplete => "off", :name => "repository", :type => "text"}/
-          %p
-          %p#repositories-list
-          %p
-            %b Target issue number
-          %p
-            %input#issue{:autocomplete => "off", :name => "issue", :type => "text"}/
       .modal-footer
         %button.btn{"aria-hidden" => "true", "data-dismiss" => "modal"} Cancel
         %button#submit-button.btn.btn-primary{:type => "submit"} OK

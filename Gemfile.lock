@@ -188,7 +188,7 @@ GEM
     rinku (2.0.0)
     ruby_parser (3.8.2)
       sexp_processor (~> 4.1)
-    rugged (0.25.0b7)
+    rugged (0.26.0)
     sanitize (4.2.0)
       crass (~> 1.0.2)
       nokogiri (>= 1.4.4)

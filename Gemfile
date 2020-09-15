@@ -2,9 +2,9 @@ source 'https://rubygems.org'
 
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
-gem 'rails', '5.0.0'
+gem 'rails', '~> 5.0.0'
 # Use sqlite3 as the database for Active Record
-gem 'sqlite3'
+gem 'sqlite3', '~> 1.3.0'
 # Use SCSS for stylesheets
 gem 'sass-rails', '~> 5.0'
 # Use Uglifier as compressor for JavaScript assets
@@ -37,10 +37,10 @@ gem 'sdoc', '~> 0.4.0', group: :doc
 # gem 'github-markup'
 
 # pure-ruby markdown to HTML converter
-gem "kramdown"
+gem "kramdown", "~> 1.12.0"
 
 # html-pipeline filter
-gem 'html-pipeline'
+gem 'html-pipeline', '~> 2.4.0'
 
 ## for EmojiFilter
 gem 'gemoji'
@@ -52,8 +52,8 @@ gem 'sanitize'
 gem 'rinku'
 
 ## for SyntaxHighlightFilter
-gem 'github-linguist'
-gem 'pygments.rb'
+gem 'github-linguist', '~> 7.11.0'
+gem 'pygments.rb', '~> 0.6.0'
 
 # OmniAuth + github
 gem 'omniauth'
@@ -87,7 +87,7 @@ gem 'bootstrap-sass', '~> 3.3.4'
 gem 'haml-rails'
 
 # for extension font
-gem 'font-awesome-sass'
+gem 'font-awesome-sass', '~> 4.0'
 
 gem 'kaminari'
 gem 'kaminari-bootstrap'

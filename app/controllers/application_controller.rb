@@ -4,7 +4,7 @@ class ApplicationController < ActionController::Base
   protect_from_forgery with: :exception
   prepend_before_filter :login_state_setup
   before_filter :authenticate
-  after_action :outgoing_webhook_action
+  # after_action :outgoing_webhook_action
 
   private
   def login_state_setup

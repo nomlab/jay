@@ -38,3 +38,6 @@ bower.json
 
 # Ignore schema
 db/schema.rb
+
+# Attic directory
+attic/

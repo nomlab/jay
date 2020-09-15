@@ -37,7 +37,7 @@ gem 'sdoc', '~> 0.4.0', group: :doc
 # gem 'github-markup'
 
 # pure-ruby markdown to HTML converter
-gem "kramdown", "~> 1.12.0"
+gem "kramdown", "~> 2.3.0"
 
 # html-pipeline filter
 gem 'html-pipeline', '~> 2.4.0'

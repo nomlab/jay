@@ -203,7 +203,7 @@ extractLines = (lines, fst, lst) ->
 #   issue: {title: TEST, body: Blah, labels: bug, assignee: yoshinari-nomura}
 newGithubIssue = (repos, issue) ->
   github = 'https://github.com'
-  window.open("#{github}/#{repos}/issues/new?#{$.param(issue)}")
+  window.open("#{github}/#{repos}/issues/new?#{$.param(issue)}&projects=nomlab/1")
 
 # Post new github comment
 #   repos: nomlab/sandbox

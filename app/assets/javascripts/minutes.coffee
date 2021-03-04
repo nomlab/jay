@@ -203,7 +203,7 @@ extractLines = (lines, fst, lst) ->
 #   issue: {title: TEST, body: Blah, labels: bug, assignee: yoshinari-nomura}
 newGithubIssue = (repos, issue) ->
   github = 'https://github.com'
-  window.open("#{github}/#{repos}/issues/new?#{$.param(issue)}&projects=nomlab/1")
+  window.open("#{github}/#{repos}/issues/new?#{$.param(issue)}")
 
 # Post new github comment
 #   repos: nomlab/sandbox
@@ -539,6 +539,7 @@ setupIssueForm = (options) ->
       issue =
         title: param[0].value
         body: param[1].value
+	projects: "#{organization}/1"
         # labels: "" # FIXME
         # assignee: minute.screen_name # FIXME
       newGithubIssue("#{options.organization}/#{param[2].value}", issue)

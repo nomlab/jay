@@ -67,7 +67,7 @@ gem 'tzinfo-data', platforms: [:mingw, :mswin, :x64_mingw, :jruby]
 gem 'jquery-rails'
 
 # pure-ruby markdown to HTML converter
-gem "kramdown", "~> 2.0"
+gem "kramdown", "~> 2.3"
 gem 'kramdown-parser-gfm'
 
 ################

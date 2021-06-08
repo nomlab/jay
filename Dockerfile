@@ -9,19 +9,14 @@
 #
 # In jay container:
 #
-#   List available tasks:
-#     bundle exec rake -T
-#   Perform test:
-#     bundle exec rake cucumber
-#   Invoke jay server:
-#     bundle exec rake sunspot:solr:start
-#     bundle exec rails server -p 12321
+#   You need to set up config files
+#   Start Setup secret key in Setup config files in README.org
+#   https://github.com/nomlab/jay#setup-config-files
 #
-# TODO:
-#   RAILS_ENV is required for production
-#   What locale and TZ are the best for production?
-#
-FROM ruby:2.4.3
+# Invoke jay server:
+#   scripts/launch.sh development
+
+FROM ruby:3.0.0
 
 ENV DEBIAN_FRONTEND noninteractive
 

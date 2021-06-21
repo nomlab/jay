@@ -25,9 +25,9 @@
         %td= minute.dtstart.strftime("%Y-%m-%d") rescue nil
         %td= minute.location
         %td= minute.author && minute.author.name
-        %td= link_to icon('pencil'), edit_minute_path(minute)
-        %td= link_to icon('repeat'), reuse_minute_path(minute)
-        %td= link_to icon('trash'), minute, method: :delete, data: { confirm: 'Are you sure?' }
+        %td= link_to icon('fas', 'pencil-alt'), edit_minute_path(minute)
+        %td= link_to icon('fas', 'redo-alt'), reuse_minute_path(minute)
+        %td= link_to icon('fas', 'trash-alt'), minute, method: :delete, data: { confirm: 'Are you sure?' }
 %br/
 = new_content :minute
 

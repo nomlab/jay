@@ -102,7 +102,7 @@ gem 'bootstrap-sass', '~> 3.3.4'
 gem 'haml-rails'
 
 # for extension font
-gem 'font-awesome-sass', '~> 4.0'
+gem 'font-awesome-sass', '~> 5.0'
 
 gem 'kaminari'
 gem 'kaminari-bootstrap'

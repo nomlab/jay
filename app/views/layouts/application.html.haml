@@ -35,7 +35,7 @@
               - if User.current
                 = link_to glyphicon('log-out', 'logout'), {:controller => 'sessions', :action => 'logout'}, :class => 'navbar-link'
               - else
-                = link_to glyphicon('log-in', 'login'), '/auth/github', :class => 'navbar-link'
+                = link_to glyphicon('log-in', 'login'), '/auth/github', :class => 'navbar-link', :method => 'post'
         / navbar links for collapse toggling
       / container-fluid
     / navbar

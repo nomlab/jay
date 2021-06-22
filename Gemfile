@@ -82,9 +82,10 @@ gem 'sanitize' ## for SanitizationFilter
 gem 'rouge'    ## for SyntaxHighlightFilter
 
 # OmniAuth + github
-gem 'omniauth', '~> 1.9'
+gem 'omniauth', '~> 2.0.0'
 gem 'omniauth-github'
 gem "omniauth-github-team-member"
+gem 'omniauth-rails_csrf_protection'
 
 # application settings
 gem "settingslogic"

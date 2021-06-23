@@ -539,7 +539,7 @@ setupIssueForm = (options) ->
       issue =
         title: param[0].value
         body: param[1].value
-	projects: "#{organization}/1"
+        projects: "#{organization}/1"
         # labels: "" # FIXME
         # assignee: minute.screen_name # FIXME
       newGithubIssue("#{options.organization}/#{param[2].value}", issue)

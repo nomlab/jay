@@ -1,4 +1,4 @@
-class CreateActionItems < ActiveRecord::Migration
+class CreateActionItems < ActiveRecord::Migration[4.2]
   def change
     create_table :action_items do |t|
       t.string :summary

@@ -1,4 +1,4 @@
-class CreateMinutes < ActiveRecord::Migration
+class CreateMinutes < ActiveRecord::Migration[4.2]
   def change
     create_table :minutes do |t|
       t.string :title

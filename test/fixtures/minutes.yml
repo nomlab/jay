@@ -1,17 +1,1 @@
 # Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
-
-one:
-  title: MyString
-  dtstart: 2015-06-09 17:44:47
-  dtend: 2015-06-09 17:44:47
-  location: MyString
-  author_id: 1
-  content: MyText
-
-two:
-  title: MyString
-  dtstart: 2015-06-09 17:44:47
-  dtend: 2015-06-09 17:44:47
-  location: MyString
-  author_id: 1
-  content: MyText

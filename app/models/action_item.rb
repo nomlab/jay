@@ -1,4 +1,4 @@
-class ActionItem < ActiveRecord::Base
+class ActionItem < ApplicationRecord
   after_create :set_uid
 
   def uid

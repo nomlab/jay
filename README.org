@@ -6,8 +6,8 @@
   jay is a simple markdown editor for memo and taking minutes
 
 * Setup Ruby Environment
-  | Ruby  | 2.2.1 |
-  | Rails | 4.2.1 |
+  | Ruby  | 3.0.0 |
+  | Rails | 6.0~ |
 
   I recommend you to install new Ruby and Bundler on the top of Rbenv before install jay.
 

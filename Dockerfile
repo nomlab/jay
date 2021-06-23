@@ -8,11 +8,8 @@
 #   docker run -t -i --name "jay" -p 12321:12321 jay
 #
 # In jay container:
-#   1 In config/application_settings.yml,
-#     setup　GitHub's organization, client_id, client_secret, and allowed_team_id
-#   2 $ EDITOR="vim" bundle exec rails credentials:edit
-#   3 $ bundle exec rake db:migrate
-#   4 $ bundle exec rake db:migrate RAILS_ENV=production
+#   In config/application_settings.yml,
+#   setup　GitHub's organization, client_id, client_secret, and allowed_team_id
 #
 # Invoke jay server:
 #   scripts/launch.sh production
@@ -20,10 +17,6 @@
 FROM ruby:3.0.0
 
 ENV DEBIAN_FRONTEND noninteractive
-
-# Set timezone
-RUN echo Asia/Tokyo > /etc/timezone
-RUN dpkg-reconfigure -f noninteractive tzdata
 
 # Install required packages
 RUN apt-get update -qq \
@@ -36,6 +29,7 @@ RUN locale-gen ja_JP.UTF-8
 ENV LANG ja_JP.UTF-8
 ENV LANGUAGE ja_JP:ja
 ENV LC_TIME C
+ENV TZ Asia/Tokyo
 RUN localedef -f UTF-8 -i ja_JP ja_JP.utf8
 
 # Add jay user
@@ -56,4 +50,7 @@ USER jay
 RUN gem install bundler
 RUN bundle config set path 'vendor/bundle'
 RUN bundle install
+RUN EDITOR=":" bundle exec rails credentials:edit
+RUN bundle exec rails db:migrate
+RUN bundle exec rails db:migrate RAILS_ENV=production
 CMD ["bash"]

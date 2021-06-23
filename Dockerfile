@@ -5,16 +5,17 @@
 #   docker build -t jay .
 #
 # To run container:
-#   docker run -t -i --rm --name "jay" -p 12321:12321 jay
+#   docker run -t -i --name "jay" -p 12321:12321 jay
 #
 # In jay container:
-#
-#   You need to set up config files
-#   Start Setup secret key in Setup config files in README.org
-#   https://github.com/nomlab/jay#setup-config-files
+#   1 In config/application_settings.yml,
+#     setup　GitHub's organization, client_id, client_secret, and allowed_team_id
+#   2 $ EDITOR="vim" bundle exec rails credentials:edit
+#   3 $ bundle exec rake db:migrate
+#   4 $ bundle exec rake db:migrate RAILS_ENV=production
 #
 # Invoke jay server:
-#   scripts/launch.sh development
+#   scripts/launch.sh production
 
 FROM ruby:3.0.0
 
@@ -24,7 +25,7 @@ ENV DEBIAN_FRONTEND noninteractive
 RUN echo Asia/Tokyo > /etc/timezone
 RUN dpkg-reconfigure -f noninteractive tzdata
 
-# Install required packages 
+# Install required packages
 RUN apt-get update -qq \
     && apt-get install -y locales sudo build-essential git-core vim libsqlite3-dev nodejs\
     && apt-get clean \
@@ -51,10 +52,8 @@ RUN chown -R jay:jay /home/jay
 # Switch user to jay
 USER jay
 
-# Setup Rails app (RAILS_ENV=development)
+# Install gem
 RUN gem install bundler
-RUN bundle install --path=vendor/bundle
-#RUN bundle exec rake db:migrate
-#RUN bundle exec rake db:migrate RAILS_ENV=production
-
+RUN bundle config set path 'vendor/bundle'
+RUN bundle install
 CMD ["bash"]

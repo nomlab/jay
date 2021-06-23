@@ -97,7 +97,7 @@ gem "octokit"
 gem 'jquery-textcomplete-rails'
 
 # https://github.com/twbs/bootstrap-sass
-gem 'bootstrap-sass', '~> 3.3.4'
+gem 'bootstrap-sass', '~> 3.4.1'
 
 # haml
 gem 'haml-rails'

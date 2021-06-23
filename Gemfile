@@ -1,10 +1,10 @@
 source 'https://rubygems.org'
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
-ruby '2.4.3'
+ruby '3.0.0'
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
-gem 'rails', '~> 5.2.4', '>= 5.2.4.4'
+gem 'rails', '~> 6.0'
 # Use sqlite3 as the database for Active Record
 gem 'sqlite3'
 # Use Puma as the app server
@@ -82,15 +82,16 @@ gem 'sanitize' ## for SanitizationFilter
 gem 'rouge'    ## for SyntaxHighlightFilter
 
 # OmniAuth + github
-gem 'omniauth'
+gem 'omniauth', '~> 2.0.0'
 gem 'omniauth-github'
 gem "omniauth-github-team-member"
+gem 'omniauth-rails_csrf_protection'
 
 # application settings
 gem "settingslogic"
 
 # Octokit -- Github access lib
-gem "octokit", "~> 3.0"
+gem "octokit"
 
 # for Emoji completion
 gem 'jquery-textcomplete-rails'
@@ -102,7 +103,7 @@ gem 'bootstrap-sass', '~> 3.3.4'
 gem 'haml-rails'
 
 # for extension font
-gem 'font-awesome-sass', '~> 4.0'
+gem 'font-awesome-sass', '~> 5.0'
 
 gem 'kaminari'
 gem 'kaminari-bootstrap'

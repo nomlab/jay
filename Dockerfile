@@ -9,10 +9,7 @@
 #
 # In jay container:
 #   In config/application_settings.yml,
-#   setup　GitHub's organization, client_id, client_secret, and allowed_team_id
-#
-# Invoke jay server:
-#   scripts/launch.sh production
+#   setup GitHub's organization, client_id, client_secret, and allowed_team_id
 
 FROM ruby:3.0.0
 
@@ -50,7 +47,4 @@ USER jay
 RUN gem install bundler
 RUN bundle config set path 'vendor/bundle'
 RUN bundle install
-RUN EDITOR=":" bundle exec rails credentials:edit
-RUN bundle exec rails db:migrate
-RUN bundle exec rails db:migrate RAILS_ENV=production
 CMD ["bash"]

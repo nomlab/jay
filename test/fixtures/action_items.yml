@@ -2,10 +2,10 @@
 
 one:
   summary: MyString
-  uid: MyString
-  github_issue: MyString
+  uid: uid_1
+  github_issue: issue_1
 
 two:
   summary: MyString
-  uid: MyString
-  github_issue: MyString
+  uid: uid_2
+  github_issue: issue_2

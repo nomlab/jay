@@ -1,9 +1,11 @@
 # Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
-  screen_name: MyString
+  id: 1
+  screen_name: screen_one
   name: MyString
 
 two:
-  screen_name: MyString
+  id: 2
+  screen_name: screen_two
   name: MyString

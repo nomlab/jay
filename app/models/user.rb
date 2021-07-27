@@ -1,4 +1,4 @@
-class User < ActiveRecord::Base
+class User < ApplicationRecord
   has_many :minutes, :foreign_key => :author_id
 
   validates_presence_of :provider, :uid, :screen_name

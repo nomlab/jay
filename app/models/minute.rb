@@ -1,5 +1,5 @@
 # coding: utf-8
-class Minute < ActiveRecord::Base
+class Minute < ApplicationRecord
   belongs_to :author, :class_name => "User", :foreign_key => :author_id
   has_and_belongs_to_many :tags
   before_validation :add_unique_action_item_marker

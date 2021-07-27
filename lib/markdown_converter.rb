@@ -566,7 +566,11 @@ module Kramdown
       #   </ul>
       #
       def convert_li(el, indent)
-        output = ' '*indent << "<#{el.type}" << html_attributes(el.attr) << ">"
+        if el.value
+          output = ' '*indent << "<#{el.type}" << html_attributes(el.attr) << ">"
+        elsif
+          output = ' '*indent << "<#{el.type}" << " class=\"ul_list_item\"" << html_attributes(el.attr) << ">"
+        end
 
         if el.value.respond_to?(:mark)
           output << "<span class=\"bullet-list-marker\">(#{el.value.mark})</span>"

@@ -48,6 +48,11 @@ li.bullet-list-item {
   text-indent: -2.4em;
 }
 
+ul > li {
+  margin-left: 0px;
+  text-indent: 0em;
+}
+
 .bullet-list-marker {
   font-family: monospace !important;
   font-weight: normal;

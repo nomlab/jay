@@ -123,6 +123,19 @@
       $ bundle exec rake db:migrate RAILS_ENV=production
       #+END_SRC
 
+** Setup by Docker
+    1) Clone jay from github
+      #+BEGIN_SRC sh
+      $ git clone https://github.com/nomlab/jay.git ~/Programs/jay
+      $ cd ~/Programs/jay
+      #+END_SRC
+    2) Setup application settings
+      1) See above items 3 ~ 6
+    3) Setup jay image
+      #+BEGIN_SRC sh
+      $ ./scripts/setup-docker.sh
+      #+END_SRC
+
 * Launch jay
 ** development
     #+BEGIN_SRC sh
@@ -149,3 +162,13 @@
     # stop
     $ kill $(cat tmp/pids/server.pid)
     #+END_SRC
+
+** launch production by Docker
+    #+BEGIN_SRC sh
+    # start
+    $ ./scripts/launch-docker.sh start
+
+    # stop
+    $ ./scripts/launch-docker.sh stop
+    #+END_SRC
+

@@ -133,7 +133,8 @@
       1) See above items 3 ~ 6
     3) Setup jay image
       #+BEGIN_SRC sh
-      $ ./scripts/setup-docker.sh
+      $ ./scripts/setup-docker.sh jay
+      # Replace "jay" with the name of user that runs jay container
       #+END_SRC
 
 * Launch jay

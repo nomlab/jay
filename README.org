@@ -6,8 +6,8 @@
   jay is a simple markdown editor for memo and taking minutes
 
 * Setup Ruby Environment
-  | Ruby  | 2.2.1 |
-  | Rails | 4.2.1 |
+  | Ruby  | 3.0.0 |
+  | Rails | 6.1.3 |
 
   I recommend you to install new Ruby and Bundler on the top of Rbenv before install jay.
 
@@ -20,12 +20,12 @@
 
   2) Install Ruby and Bundler
      #+BEGIN_SRC sh
-     # Install ruby 2.2.1
-     $ rbenv install 2.2.1
+     # Install ruby 3.0.0
+     $ rbenv install 3.0.0
 
      # Installation check
-     $ rbenv global 2.2.1
-     $ ruby -v # -> You will see: ruby 2.2.1...
+     $ rbenv global 3.0.0
+     $ ruby -v # -> You will see: ruby 3.0.0...
 
      # Install bundler for your new Ruby
      $ gem install bundler
@@ -48,7 +48,7 @@
    2) Setup to use installed ruby
       #+BEGIN_SRC sh
       $ cd ~/Programs/jay
-      $ ruby -v # -> You will see: ruby 2.2.1...
+      $ ruby -v # -> You will see: ruby 3.0.0...
       #+END_SRC
 
 ** Setup config files
@@ -117,6 +117,11 @@
            #      token: foobarbuz
            #+END_SRC
 
+   7) create master.key
+      #+BEGIN_SRC sh
+      $ EDITOR='vi' bundle exec rails credential:edit
+      #+END_SRC
+
    8) Setup DB
       #+BEGIN_SRC sh
       $ bundle exec rake db:migrate
@@ -166,10 +171,34 @@
 
 ** launch production by Docker
     #+BEGIN_SRC sh
-    # start
-    $ ./scripts/launch-docker.sh start
+    # start with foreground
+    $ ./scripts/jay-docker.sh start
+
+    # start with background
+    $ ./scripts/jay-docker.sh start -d
 
     # stop
-    $ ./scripts/launch-docker.sh stop
+    $ ./scripts/jay-docker.sh stop
     #+END_SRC
+
+** systemd_conf
+*** settings
+    1) Copy service file to systemd service directory
+      #+BEGIN_SRC sh
+      $ sudo cp systemd_conf/jay.service /etc/systemd/system/jay.service
+      #+END_SRC
+    2) Change below settings in service file to suit your environment
+       1) Path of jay
+       2) Port to bind
+*** launch
+      #+BEGIN_SRC sh
+      # start
+      $ sudo systemctl start jay
+
+      # stop
+      $ sudo systemctl stop jay
+
+      # check status
+      $ sudo systemctl status jay
+      #+END_SRC
 

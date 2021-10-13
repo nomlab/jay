@@ -1,5 +1,8 @@
 #!/bin/bash
 
+echo "chage ownership"
+chown -R jay:jay /home/jay/*
+
 echo "create master.key"
 EDITOR=':' bundle exec rails credentials:edit
 

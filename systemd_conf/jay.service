@@ -7,7 +7,6 @@ After=docker.service
 # Change path and port to suit your environment
 User=jay
 ExecStart=/path/to/jay/scripts/jay-docker.sh start -p 3000
-ExecStop=/path/to/jay/scripts/jay-docker.sh stop
 
 Type=simple
 Restart=on-failure

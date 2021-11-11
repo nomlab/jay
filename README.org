@@ -181,7 +181,7 @@
     $ ./scripts/jay-docker.sh stop
     #+END_SRC
 
-** systemd_conf
+** systemd
 *** settings
     1) Copy service file to systemd service directory
       #+BEGIN_SRC sh
@@ -192,10 +192,10 @@
        2) Port to bind
 *** launch
       #+BEGIN_SRC sh
-      # start
+      # manual start
       $ sudo systemctl start jay
 
-      # stop
+      # manual stop
       $ sudo systemctl stop jay
 
       # check status

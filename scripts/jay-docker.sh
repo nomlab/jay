@@ -93,7 +93,6 @@ function start(){
     PORT=$DEFAULT_PORT
     COMMAND=$DEFAULT_COMMAND
     ATTACH_OPTION=$DEFAULT_ATTACH_OPTION
-    set_start_options $@
 
     if container_is_running $CONTAINER_NAME; then
         echo "$CONTAINER_NAME is already runnning"
@@ -113,6 +112,8 @@ function start(){
         echo "Port $PORT is used"
         exit 1
     fi
+
+    set_start_options $@
 
     echo "starting $CONTAINER_NAME"
     docker run \
